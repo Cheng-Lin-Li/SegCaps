@@ -22,7 +22,7 @@ import numpy as np
 from numpy.random import rand, shuffle
 import SimpleITK as sitk
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
+from tqdm import tqdm #Progress bar
 
 import matplotlib
 matplotlib.use('Agg')
@@ -37,11 +37,11 @@ debug = 0
 
 def load_data(root, split):
     # Load the training and testing lists
-    with open(join(root, 'split_lists', 'train_split_' + str(split) + '.csv'), 'rb') as f:
+    with open(join(root, 'split_lists', 'train_split_' + str(split) + '.csv'), 'r') as f:
         reader = csv.reader(f)
         training_list = list(reader)
 
-    with open(join(root, 'split_lists', 'test_split_' + str(split) + '.csv'), 'rb') as f:
+    with open(join(root, 'split_lists', 'test_split_' + str(split) + '.csv'), 'r') as f:
         reader = csv.reader(f)
         testing_list = list(reader)
 
@@ -102,11 +102,12 @@ def split_data(root_path, num_splits=4):
     kf = KFold(n_splits=num_splits)
     n = 0
     for train_index, test_index in kf.split(mask_list):
-        with open(join(outdir,'train_split_' + str(n) + '.csv'), 'wb') as csvfile:
+        with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in train_index:
+                print('basename=%s'%([basename(mask_list[i])]))
                 writer.writerow([basename(mask_list[i])])
-        with open(join(outdir,'test_split_' + str(n) + '.csv'), 'wb') as csvfile:
+        with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in test_index:
                 writer.writerow([basename(mask_list[i])])
@@ -278,9 +279,9 @@ class threadsafe_iter:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         with self.lock:
-            return self.it.next()
+            return self.it.__next__()
 
 
 def threadsafe_generator(f):
@@ -438,8 +439,10 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
 def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, numSlices=1, subSampAmt=0,
                           stride=1, downSampAmt=1):
     # Create placeholders for testing
+    print('load_3D_data.generate_test_batches')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     count = 0
+    print('load_3D_data.generate_test_batches: test_list=%s'%(test_list))
     for i, scan_name in enumerate(test_list):
         try:
             scan_name = scan_name[0]
@@ -478,3 +481,4 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
 
     if count != 0:
         yield (img_batch[:count,:,:,:])
+        

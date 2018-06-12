@@ -1,5 +1,10 @@
 # Capsules for Object Segmentation (SegCaps)
 ### by [Rodney LaLonde](https://rodneylalonde.wixsite.com/personal) and [Ulas Bagci](http://www.cs.ucf.edu/~bagci/)
+<<<<<<< HEAD
+### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/) for Python 3
+### Objectives: Improve this model for Object Segmentation on different dataset (COCO) with multi-class classification tasks.
+=======
+>>>>>>> parent of 2250482... Modify readme and add sample LUNA 16 images
 
 ## This repo is the official implementation of SegCaps
 
@@ -7,6 +12,99 @@ The original paper for SegCaps can be found at https://arxiv.org/abs/1804.04241.
 
 A project page for this work can be found at https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation.
 
+
+## TODO List:
+  1. Execute programs on LUNA 16 dataset.
+  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO.
+  3. Test existing program on color images.
+  4. Modify program for color images.
+  5. Modify existing program on multi-classification tasks.
+  6. Integrate model with webcam.
+  7. Pipeline up:
+    7-1. Modify code to support experiments.
+      7-1-1. Models persistent by version with configuration and dataset.
+      7-1-2. Notebook folder build up to store experiment results.
+    7-2. Test pipeline
+
+
+
+## Getting Started Guide
+
+### Install Required Packages
+This repo of code is written for Keras using the TensorFlow backend. 
+You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
+
+Please install all required packages before using this code.
+
+
+```bash
+pip install -r requirements.txt
+```
+### You may need to install additional library in Ubuntu version 17 or above version.
+Following steps will resolve below issue.
+```text
+ImportError: libjasper.so.1: cannot open shared object file: No such file or directory
+```
+```bash
+sudo apt-get update
+sudo apt-get install libjasper-dev
+```
+### Dataset
+
+Test the result on original LUNA 16 dataset.
+  1. Go to [LUng Nodule Analysis 2016 Grand-Challenges website](https://luna16.grand-challenge.org/)
+  2. Get an account by registration.
+  3. Join the 'LUNA 16' challenge by click 'All Challenges' on the tab of top. Click the 'Join' and goto 'Download' section to get your data.
+
+
+### Dataset Structure
+
+Inside the data root folder (*i.e.* where you have your data stored) you should have two folders: one called *imgs* and one called *masks*. All models, results, etc. are saved to this same root directory.
+
+You need to put your mask and image files into both *imgs* and *masks* folders to make program work.
+
+### Main File
+
+From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
+
+### Modification for Python 3.6
+  1. open(join(outdir,'train_split_' + str(n) + '.csv'), 'wb') => open(join(outdir,'train_split_' + str(n) + '.csv'), 'w')
+  2. open(join(root, 'split_lists', 'train_split_' + str(split) + '.csv'), 'rb') => open(join(root, 'split_lists', 'train_split_' + str(split) + '.csv'), 'r')
+  3. def next(self): => def __next__(self):
+
+### Citation
+
+This project based on the official codebase of Capsules for Object Segmentation:
+```
+@article{lalonde2018capsules,
+  title={Capsules for Object Segmentation},
+  author={LaLonde, Rodney and Bagci, Ulas},
+  journal={arXiv preprint arXiv:1804.04241},
+  year={2018}
+}
+```
+
+### Questions or Comments
+<<<<<<< HEAD
+For this modification version, please email me at clark.cl.li@gmail.com
+
+For the original implementation, please direct any questions or comments to the author. You can either comment on the [project page](https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation), or email author directly at lalonde@knights.ucf.edu.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Original README.md description:
 <img src="imgs/qualitative1.png" width="900px"/>
 
 ## Condensed Abstract
@@ -34,34 +132,7 @@ Convolutional neural networks (CNNs) have shown remarkable results over the last
 
 <img src="imgs/manip_cropped.png" width="900px"/>
 
-## Getting Started Guide
-
-### Install Required Packages
-This repo of code is written for Keras using the TensorFlow backend. Please install all required packages before using this code.
-```bash
-pip install -r requirements.txt
-```
-
-### Dataset Structure
-
-Inside the data root folder (*i.e.* where you have your data stored) you should have two folders: one called *imgs* and one called *masks*. All models, results, etc. are saved to this same root directory.
-
-### Main File
-
-From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
-
-### Citation
-
-If you use significant portions of our code or ideas from our paper in your research, please cite our work:
-```
-@article{lalonde2018capsules,
-  title={Capsules for Object Segmentation},
-  author={LaLonde, Rodney and Bagci, Ulas},
-  journal={arXiv preprint arXiv:1804.04241},
-  year={2018}
-}
-```
-
-### Questions or Comments
+=======
 
 Please direct any questions or comments to me; I am happy to help in any way I can. You can either comment on the [project page](https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation), or email me directly at lalonde@knights.ucf.edu.
+>>>>>>> parent of 2250482... Modify readme and add sample LUNA 16 images

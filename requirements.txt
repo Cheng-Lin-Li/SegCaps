@@ -6,6 +6,12 @@ scikit-learn
 scikit-image
 pillow
 SimpleITK
-tensorflow-gpu
 keras
 h5py
+
+# Depends on your environment.
+tensorflow
+# tensorflow-gpu
+
+# Below section
+opencv-python

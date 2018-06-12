@@ -111,7 +111,7 @@ def test(args, test_list, model_list, net_input_shape):
     # Testing the network
     print('Testing... This will take some time...')
 
-    with open(join(output_dir, args.save_prefix + outfile + 'scores.csv'), 'wb') as csvfile:
+    with open(join(output_dir, args.save_prefix + outfile + 'scores.csv'), 'w') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
         row = ['Scan Name']
@@ -128,7 +128,7 @@ def test(args, test_list, model_list, net_input_shape):
             sitk_img = sitk.ReadImage(join(args.data_root_dir, 'imgs', img[0]))
             img_data = sitk.GetArrayFromImage(sitk_img)
             num_slices = img_data.shape[0]
-
+            print('test.test: eval_model.predict_generator')
             output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
                                                                               net_input_shape,
                                                                               batchSize=args.batch_size,
@@ -137,7 +137,7 @@ def test(args, test_list, model_list, net_input_shape):
                                                                               stride=1),
                                                         steps=num_slices, max_queue_size=1, workers=1,
                                                         use_multiprocessing=False, verbose=1)
-
+            print('test.test: output_array=%s'%(output_array))
             if args.net.find('caps') != -1:
                 output = output_array[0][:,:,:,0]
                 #recon = output_array[1][:,:,:,0]

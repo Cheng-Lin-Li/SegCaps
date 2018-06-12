@@ -15,7 +15,7 @@ from os.path import join
 from os import makedirs
 from os import environ
 import argparse
-import SimpleITK as sitk
+import SimpleITK as sitk #image process
 from time import gmtime, strftime
 time = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
 
@@ -34,10 +34,12 @@ def main(args):
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
     except:
         # Create the training and test splits if not found
+        print('No existing training, validate, test files...System will generate it.')
         split_data(args.data_root_dir, num_splits=4)
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
 
     # Get image properties from first image. Assume they are all the same.
+    print('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
     img_shape = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0]))).shape
     net_input_shape = (img_shape[1], img_shape[2], args.slices)
 
