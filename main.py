@@ -8,8 +8,9 @@ If you have any questions, please email me at lalonde@knights.ucf.edu.
 This is the main file for the project. From here you can train, test, and manipulate the SegCaps of models.
 Please see the README for detailed instructions for this project.
 '''
-
 from __future__ import print_function
+
+RESOLUTION = 512 # Resolution of the input for the model.
 
 from os.path import join
 from os import makedirs
@@ -23,12 +24,13 @@ from keras.utils import print_summary
 
 from load_3D_data import load_data, split_data
 from model_helper import create_model
-
+import matplotlib.pyplot as plt
+import cv2
 
 def main(args):
     # Ensure training, testing, and manip are not all turned off
     assert (args.train or args.test or args.manip), 'Cannot have train, test, and manip all set to 0, Nothing to do.'
-
+    assert (args.dataset == 'luna16' or args.dataset == 'mscoco17'), 'Only support LUNA 16 or MS COCO 17 dataset.'
     # Load the training, validation, and testing data
     try:
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
@@ -40,8 +42,15 @@ def main(args):
 
     # Get image properties from first image. Assume they are all the same.
     print('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
-    img_shape = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0]))).shape
-    net_input_shape = (img_shape[1], img_shape[2], args.slices)
+    # Get image shape from the first image.
+    image = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0])))
+    img_shape = image.shape #(500,500,4)
+    net_input_shape = (img_shape[1], img_shape[2], args.slices)    
+    
+    if args.dataset == 'mscoco17':
+        args.slices = 1
+        img_shape = (RESOLUTION, RESOLUTION, img_shape[2])
+        net_input_shape = (img_shape[0], img_shape[1], args.slices)
 
     # Create the model for training/testing/manipulation
     model_list = create_model(args=args, input_shape=net_input_shape)
@@ -125,7 +134,7 @@ if __name__ == '__main__':
     parser.add_argument('--recon_wei', type=float, default=131.072,
                         help="If using capsnet: The coefficient (weighting) for the loss of decoder")
     parser.add_argument('--slices', type=int, default=1,
-                        help='Number of slices to include for training/testing.')
+                        help='Number of slices to include for training/testing. Slices of MS COCO17 dataset is 1.')
     parser.add_argument('--subsamp', type=int, default=-1,
                         help='Number of slices to skip when forming 3D samples for training. Enter -1 for random '
                              'subsampling up to 5% of total slices.')
@@ -154,7 +163,8 @@ if __name__ == '__main__':
                         help='Number of GPUs you have available for training. '
                              'If entering specific GPU ids under the --which_gpus arg or if using CPU, '
                              'then this number will be inferred, else this argument must be included.')
-
+    parser.add_argument('--dataset', type=str, default='mscoco17', choices=['luna16', 'mscoco17'],
+                        help='Enter "mscoco17" for COCO dataset, "luna16" for CT images')
     arguments = parser.parse_args()
 
     #

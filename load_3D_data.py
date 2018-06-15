@@ -8,9 +8,16 @@ If you have any questions, please email me at lalonde@knights.ucf.edu.
 This file is used for loading training, validation, and testing data into the models.
 It is specifically designed to handle 3D single-channel medical data.
 Modifications will be needed to train/test on normal 3-channel images.
+
+Enhancement:
+    0. Porting to Python version 3.6
+    1. Add image_resize2square to accept any size of images and change to 512 X 512 resolutions.
+    2. 
 '''
 
 from __future__ import print_function
+
+MASK_FILE_PRE = 'm_'
 
 import threading
 from os.path import join, basename
@@ -27,6 +34,8 @@ from tqdm import tqdm #Progress bar
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import cv2
+
 plt.ioff()
 
 from keras.preprocessing.image import *
@@ -34,6 +43,37 @@ from keras.preprocessing.image import *
 from custom_data_aug import elastic_transform, salt_pepper_noise
 
 debug = 0
+
+def image_resize2square(image, desired_size = None):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    dim = None
+    old_size = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if desired_size is None:
+        return image
+
+    # calculate the ratio of the height and construct the
+    # dimensions
+    ratio = float(desired_size)/max(old_size)
+    new_size = tuple([int(x*ratio) for x in old_size])
+
+    # new_size should be in (width, height) format
+    resized = cv2.resize(image, (new_size[1], new_size[0]))
+
+    delta_w = desired_size - new_size[1]
+    delta_h = desired_size - new_size[0]
+    top, bottom = delta_h//2, delta_h-(delta_h//2)
+    left, right = delta_w//2, delta_w-(delta_w//2)
+
+    color = [0, 0, 0]
+    new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+
+    # return the resized image
+    return new_image
+
 
 def load_data(root, split):
     # Load the training and testing lists
@@ -61,7 +101,7 @@ def compute_class_weights(root, train_data_list):
     pos = 0.0
     neg = 0.0
     for img_name in tqdm(train_data_list):
-        img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', img_name[0])))
+        img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', MASK_FILE_PRE+img_name[0])))
         for slic in img:
             if not np.any(slic):
                 continue
@@ -88,10 +128,10 @@ def load_class_weights(root, split):
 
 def split_data(root_path, num_splits=4):
     mask_list = []
-    for ext in ('*.mhd', '*.hdr', '*.nii'):
-        mask_list.extend(sorted(glob(join(root_path,'masks',ext))))
+    for ext in ('*.mhd', '*.hdr', '*.nii', '*.png'): #add png file support
+        mask_list.extend(sorted(glob(join(root_path,'imgs',ext)))) # check imgs instead of masks
 
-    assert len(mask_list) != 0, 'Unable to find any files in {}'.format(join(root_path,'masks'))
+    assert len(mask_list) != 0, 'Unable to find any files in {}'.format(join(root_path,'imgs'))
 
     outdir = join(root_path,'split_lists')
     try:
@@ -295,6 +335,7 @@ def threadsafe_generator(f):
 def generate_train_batches(root_path, train_list, net_input_shape, net, batchSize=1, numSlices=1, subSampAmt=-1,
                            stride=1, downSampAmt=1, shuff=1, aug_data=1):
     # Create placeholders for training
+    # (img_shape[1], img_shape[2], args.slices)
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
 
@@ -306,6 +347,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
             try:
                 scan_name = scan_name[0]
                 path_to_np = join(root_path,'np_files',basename(scan_name)[:-3]+'npz')
+                print('=>path_to_np=%s'%(path_to_np))
                 with np.load(path_to_np) as data:
                     train_img = data['img']
                     train_mask = data['mask']
@@ -355,7 +397,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
                             plt.imshow(np.squeeze(mask_batch[0, :, :, 0, 0]), alpha=0.15)
                         plt.savefig(join(root_path, 'logs', 'ex_train.png'), format='png', bbox_inches='tight')
                         plt.close()
-                    if net.find('caps') != -1:
+                    if net.find('caps') != -1: # if the network is capsule/segcaps structure
                         yield ([img_batch, mask_batch], [mask_batch, mask_batch*img_batch])
                     else:
                         yield (img_batch, mask_batch)
