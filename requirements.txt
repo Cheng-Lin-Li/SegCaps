@@ -8,9 +8,10 @@ pillow
 SimpleITK
 keras
 h5py
+pycocotools
 
 # Depends on your environment.
-tensorflow
+# tensorflow
 # tensorflow-gpu
 
 # Below section
