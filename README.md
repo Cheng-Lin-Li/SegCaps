@@ -1,22 +1,31 @@
 # Capsules for Object Segmentation (SegCaps)
 ### by [Rodney LaLonde](https://rodneylalonde.wixsite.com/personal) and [Ulas Bagci](http://www.cs.ucf.edu/~bagci/)
-<<<<<<< HEAD
-### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/) for Python 3
+### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/)
 ### Objectives: Improve this model for Object Segmentation on different dataset (COCO) with multi-class classification tasks.
-=======
->>>>>>> parent of 2250482... Modify readme and add sample LUNA 16 images
 
-## This repo is the official implementation of SegCaps
+## This repo is the clone implementation of SegCaps from official site with modification.
 
 The original paper for SegCaps can be found at https://arxiv.org/abs/1804.04241.
-
+The original source code can be found at https://github.com/lalonderodney/SegCaps
 A project page for this work can be found at https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation.
 
 
 ## TODO List:
-  1. Execute programs on LUNA 16 dataset.
-  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO.
+  1. Execute programs on LUNA 16 dataset. Done. Jun 11
+    1-1. Porting program from python 2.7 to 3.6 (Jun 11)
+    1-2. Execute manipulation function. (Jun 11)
+    1-2. Execute test function on one image without pre-trained weight(Jun 11)
+    1-3. Execute train function on 3 images. (Jun 12)
+    1-4. Execute test function on trained model (Jun 12)
+    1-5. Display original image and result mask image. (Jun 12)
+    1-6. Identify input image mask format. 
+  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
+    2-1. Identify COCO stuff 2017 as target dataset.
+    2-2. Download annotation files for COCO 2017.
   3. Test existing program on color images.
+    3-1. Generate single class mask on COCO masked image data.(Jun 13)
+    3-2. Convert the image mask format to background=0, objects=1. 
+    3-3. Feed the color images with single class mask to model.
   4. Modify program for color images.
   5. Modify existing program on multi-classification tasks.
   6. Integrate model with webcam.
@@ -61,16 +70,18 @@ Test the result on original LUNA 16 dataset.
 
 Inside the data root folder (*i.e.* where you have your data stored) you should have two folders: one called *imgs* and one called *masks*. All models, results, etc. are saved to this same root directory.
 
-You need to put your mask and image files into both *imgs* and *masks* folders to make program work.
+You also need to create a *split_lists* folder to keep training and testing index files.
+*train_split_0.csv* for training set.
+*test_split_0.csv* for test set.
 
 ### Main File
 
 From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
 
-### Modification for Python 3.6
-  1. open(join(outdir,'train_split_' + str(n) + '.csv'), 'wb') => open(join(outdir,'train_split_' + str(n) + '.csv'), 'w')
-  2. open(join(root, 'split_lists', 'train_split_' + str(split) + '.csv'), 'rb') => open(join(root, 'split_lists', 'train_split_' + str(split) + '.csv'), 'r')
-  3. def next(self): => def __next__(self):
+### Program Descriptions
+  1. main.py: The entry point of this project.
+  2. load_3D_data.py: The data loading model.
+  
 
 ### Citation
 
@@ -85,7 +96,6 @@ This project based on the official codebase of Capsules for Object Segmentation:
 ```
 
 ### Questions or Comments
-<<<<<<< HEAD
 For this modification version, please email me at clark.cl.li@gmail.com
 
 For the original implementation, please direct any questions or comments to the author. You can either comment on the [project page](https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation), or email author directly at lalonde@knights.ucf.edu.
@@ -132,7 +142,3 @@ Convolutional neural networks (CNNs) have shown remarkable results over the last
 
 <img src="imgs/manip_cropped.png" width="900px"/>
 
-=======
-
-Please direct any questions or comments to me; I am happy to help in any way I can. You can either comment on the [project page](https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation), or email me directly at lalonde@knights.ucf.edu.
->>>>>>> parent of 2250482... Modify readme and add sample LUNA 16 images
