@@ -70,8 +70,8 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
-class image_3D(image):
-    def __init__(self, dataset='luna16'):
+class image(object):
+    def __init__(self, dataset='mscoco17'):
         self.dataset = dataset
         
 
