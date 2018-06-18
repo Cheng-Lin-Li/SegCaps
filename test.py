@@ -29,7 +29,8 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 from keras.utils import print_summary
 
-from load_3D_data import generate_test_batches
+from data_helper import get_data_helper
+# from load_3D_data import generate_test_batches
 
 
 def threshold_mask(raw_output, threshold):
@@ -68,7 +69,9 @@ def test(args, test_list, model_list, net_input_shape):
         weights_path = join(args.check_dir, args.output_name + '_model_' + args.time + '.hdf5')
     else:
         weights_path = join(args.data_root_dir, args.weights_path)
-
+    
+    data_helper = get_data_helper(args.dataset)
+    
     output_dir = join(args.data_root_dir, 'results', args.net, 'split_' + str(args.split_num))
     raw_out_dir = join(output_dir, 'raw_output')
     fin_out_dir = join(output_dir, 'final_output')
@@ -91,6 +94,7 @@ def test(args, test_list, model_list, net_input_shape):
     else:
         eval_model = model_list[0]
     try:
+        print('Weights_path=%s'%(weights_path))
         eval_model.load_weights(weights_path)
     except:
         print('Unable to find weights path. Testing with random weights.')
@@ -125,11 +129,13 @@ def test(args, test_list, model_list, net_input_shape):
         writer.writerow(row)
 
         for i, img in enumerate(tqdm(test_list)):
+            # Pick up the first image file in imgs folder.
+            # TODO: Modify to read image files in test folder.
             sitk_img = sitk.ReadImage(join(args.data_root_dir, 'imgs', img[0]))
             img_data = sitk.GetArrayFromImage(sitk_img)
             num_slices = img_data.shape[0]
             print('test.test: eval_model.predict_generator')
-            output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
+            output_array = eval_model.predict_generator(data_helper.generate_test_batches(args.data_root_dir, [img],
                                                                               net_input_shape,
                                                                               batchSize=args.batch_size,
                                                                               numSlices=args.slices,
@@ -157,6 +163,8 @@ def test(args, test_list, model_list, net_input_shape):
             sitk.WriteImage(output_mask, join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]))
 
             # Load gt mask
+            # Load truth labels from the first file in masks folder.
+            # TODO: Change to test folder.
             sitk_mask = sitk.ReadImage(join(args.data_root_dir, 'masks', img[0]))
             gt_data = sitk.GetArrayFromImage(sitk_mask)
 

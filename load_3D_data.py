@@ -41,7 +41,7 @@ plt.ioff()
 from keras.preprocessing.image import *
 
 from custom_data_aug import elastic_transform, salt_pepper_noise
-from load_data import image
+import load_data as ld
 
 debug = 0
 
@@ -70,41 +70,9 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
-class image_3D(image):
+class image_3D(ld.image):
     def __init__(self, dataset='luna16'):
-        self.dataset = dataset
-        
-
-    def image_resize2square(self, image, desired_size = None):
-        # initialize the dimensions of the image to be resized and
-        # grab the image size
-        dim = None
-        old_size = image.shape[:2]
-    
-        # if both the width and height are None, then return the
-        # original image
-        if desired_size is None:
-            return image
-    
-        # calculate the ratio of the height and construct the
-        # dimensions
-        ratio = float(desired_size)/max(old_size)
-        new_size = tuple([int(x*ratio) for x in old_size])
-    
-        # new_size should be in (width, height) format
-        resized = cv2.resize(image, (new_size[1], new_size[0]))
-    
-        delta_w = desired_size - new_size[1]
-        delta_h = desired_size - new_size[0]
-        top, bottom = delta_h//2, delta_h-(delta_h//2)
-        left, right = delta_w//2, delta_w-(delta_w//2)
-    
-        color = [0, 0, 0]
-        new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
-    
-        # return the resized image
-        return new_image
-    
+        self.dataset = dataset   
     
     def load_data(self, root, split):
         # Load the training and testing lists
@@ -150,8 +118,8 @@ class image_3D(image):
         except:
             print('Class weight file {} not found.\nComputing class weights now. This may take '
                   'some time.'.format(class_weight_filename))
-            train_data_list, _, _ = load_data(root, str(split))
-            value = compute_class_weights(root, train_data_list)
+            train_data_list, _, _ = self.load_data(root, str(split))
+            value = self.compute_class_weights(root, train_data_list)
             np.save(class_weight_filename,value)
             print('Finished computing class weights. This value has been saved for this training split.')
             return value
@@ -315,10 +283,10 @@ class image_3D(image):
                              fill_mode='constant', cval=0.)
     
             if np.random.randint(0, 10) == 7:
-                img_and_mask = flip_axis(img_and_mask, axis=1)
+                img_and_mask = self.flip_axis(img_and_mask, axis=1)
     
             if np.random.randint(0, 10) == 7:
-                img_and_mask = flip_axis(img_and_mask, axis=0)
+                img_and_mask = self.flip_axis(img_and_mask, axis=0)
     
             if np.random.randint(0, 10) == 7:
                 salt_pepper_noise(img_and_mask, salt=0.2, amount=0.04)
@@ -343,6 +311,7 @@ class image_3D(image):
                                stride=1, downSampAmt=1, shuff=1, aug_data=1):
         # Create placeholders for training
         # (img_shape[1], img_shape[2], args.slices)
+        print('==>3d_generate_train_batches')        
         img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
         mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
     
@@ -360,7 +329,7 @@ class image_3D(image):
                         train_mask = data['mask']
                 except:
                     print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
-                    train_img, train_mask = convert_data_to_numpy(root_path, scan_name)
+                    train_img, train_mask = self.convert_data_to_numpy(root_path, scan_name)
                     if np.array_equal(train_img,np.zeros(1)):
                         continue
                     else:
@@ -394,7 +363,7 @@ class image_3D(image):
                     if count % batchSize == 0:
                         count = 0
                         if aug_data:
-                            img_batch, mask_batch = augmentImages(img_batch, mask_batch)
+                            img_batch, mask_batch = self.augmentImages(img_batch, mask_batch)
                         if debug:
                             if img_batch.ndim == 4:
                                 plt.imshow(np.squeeze(img_batch[0, :, :, 0]), cmap='gray')
@@ -411,7 +380,7 @@ class image_3D(image):
     
             if count != 0:
                 if aug_data:
-                    img_batch[:count,...], mask_batch[:count,...] = augmentImages(img_batch[:count,...],
+                    img_batch[:count,...], mask_batch[:count,...] = self.augmentImages(img_batch[:count,...],
                                                                                   mask_batch[:count,...])
                 if net.find('caps') != -1:
                     yield ([img_batch[:count, ...], mask_batch[:count, ...]],
@@ -422,6 +391,7 @@ class image_3D(image):
     @threadsafe_generator
     def generate_val_batches(self, root_path, val_list, net_input_shape, net, batchSize=1, numSlices=1, subSampAmt=-1,
                              stride=1, downSampAmt=1, shuff=1):
+        print('==>3d_generate_val_batches')
         # Create placeholders for validation
         img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
         mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
@@ -439,7 +409,7 @@ class image_3D(image):
                         val_mask = data['mask']
                 except:
                     print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
-                    val_img, val_mask = convert_data_to_numpy(root_path, scan_name)
+                    val_img, val_mask = self.convert_data_to_numpy(root_path, scan_name)
                     if np.array_equal(val_img,np.zeros(1)):
                         continue
                     else:
@@ -500,7 +470,7 @@ class image_3D(image):
                     test_img = data['img']
             except:
                 print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
-                test_img = convert_data_to_numpy(root_path, scan_name, no_masks=True)
+                test_img = self.convert_data_to_numpy(root_path, scan_name, no_masks=True)
                 if np.array_equal(test_img,np.zeros(1)):
                     continue
                 else:

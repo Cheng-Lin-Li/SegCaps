@@ -6,6 +6,8 @@ If you use significant portions of this code or the ideas from our paper, please
 If you have any questions, please email me at lalonde@knights.ucf.edu.
 
 This file is used for training models. Please see the README for details about training.
+
+Enhancement: Integrated with MS COCO dataset.
 '''
 
 from __future__ import print_function
@@ -24,21 +26,21 @@ K.set_image_data_format('channels_last')
 from keras.utils.training_utils import multi_gpu_model
 from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping, ReduceLROnPlateau, TensorBoard
 import tensorflow as tf
-
+# from load_3D_data import generate_test_batches
 from custom_losses import dice_hard, weighted_binary_crossentropy_loss, dice_loss, margin_loss
-from load_3D_data import load_class_weights, generate_train_batches, generate_val_batches
+from data_helper import get_data_helper
 
-
-def get_loss(root, split, net, recon_wei, choice):
+def get_loss(data_helper, root, split, net, recon_wei, choice):
+    
     if choice == 'w_bce':
-        pos_class_weight = load_class_weights(root=root, split=split)
+        pos_class_weight = data_helper.load_class_weights(root=root, split=split)
         loss = weighted_binary_crossentropy_loss(pos_class_weight)
     elif choice == 'bce':
         loss = 'binary_crossentropy'
-    elif choice == 'dice':
+    elif choice == 'dice': # https://dev.to/andys0975/what-is-dice-loss-for-image-segmentation-3p85
         loss = dice_loss
     elif choice == 'w_mar':
-        pos_class_weight = load_class_weights(root=root, split=split)
+        pos_class_weight = data_helper.load_class_weights(root=root, split=split)
         loss = margin_loss(margin=0.4, downweight=0.5, pos_weight=pos_class_weight)
     elif choice == 'mar':
         loss = margin_loss(margin=0.4, downweight=0.5, pos_weight=1.0)
@@ -66,6 +68,7 @@ def get_callbacks(arguments):
 
     return [model_checkpoint, csv_logger, lr_reducer, early_stopper, tb]
 
+
 def compile_model(args, net_input_shape, uncomp_model):
     # Set optimizer loss and metrics
     opt = Adam(lr=args.initial_lr, beta_1=0.99, beta_2=0.999, decay=1e-6)
@@ -74,7 +77,10 @@ def compile_model(args, net_input_shape, uncomp_model):
     else:
         metrics = [dice_hard]
 
-    loss, loss_weighting = get_loss(root=args.data_root_dir, split=args.split_num, net=args.net,
+    # Identify image typeget_data_helper
+    data_helper = get_data_helper(args.dataset)
+        
+    loss, loss_weighting = get_loss(data_helper, root=args.data_root_dir, split=args.split_num, net=args.net,
                                     recon_wei=args.recon_wei, choice=args.loss)
 
     # If using CPU or single GPU
@@ -152,13 +158,16 @@ def train(args, train_list, val_list, u_model, net_input_shape):
 #         verbose=1)
 
 # POC testing
+    # Identify image type
+    data_helper = get_data_helper(args.dataset)
+    print('==>train')
     history = model.fit_generator(
-        generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
+        data_helper.generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
                                stride=args.stride, shuff=args.shuffle_data, aug_data=args.aug_data),
         max_queue_size=40, workers=4, use_multiprocessing=False,
         steps_per_epoch=10,
-        validation_data=generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
+        validation_data=data_helper.generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
                                              batchSize=args.batch_size,  numSlices=args.slices, subSampAmt=0,
                                              stride=20, shuff=args.shuffle_data),
         validation_steps=5, # Set validation stride larger to see more of the data.

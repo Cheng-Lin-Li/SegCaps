@@ -45,6 +45,8 @@ from custom_data_aug import elastic_transform, salt_pepper_noise
 debug = 0
 
 
+
+
 ''' Make the generators threadsafe in case of multiple threads '''
 class threadsafe_iter:
     """Takes an iterator/generator and makes it thread-safe by
@@ -69,7 +71,7 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
-class image_2D(object):
+class image():
     def __init__(self, dataset='mscoco17'):
         self.dataset = dataset
         
@@ -149,8 +151,8 @@ class image_2D(object):
         except:
             print('Class weight file {} not found.\nComputing class weights now. This may take '
                   'some time.'.format(class_weight_filename))
-            train_data_list, _, _ = load_data(root, str(split))
-            value = compute_class_weights(root, train_data_list)
+            train_data_list, _, _ = self.load_data(root, str(split))
+            value = self.compute_class_weights(root, train_data_list)
             np.save(class_weight_filename,value)
             print('Finished computing class weights. This value has been saved for this training split.')
             return value
@@ -182,103 +184,6 @@ class image_2D(object):
                 for i in test_index:
                     writer.writerow([basename(mask_list[i])])
             n += 1
-    
-    
-    def convert_data_to_numpy(self, root_path, img_name, no_masks=False, overwrite=False):
-        fname = img_name[:-4]
-        numpy_path = join(root_path, 'np_files')
-        img_path = join(root_path, 'imgs')
-        mask_path = join(root_path, 'masks')
-        fig_path = join(root_path, 'figs')
-        try:
-            mkdir(numpy_path)
-        except:
-            pass
-        try:
-            mkdir(fig_path)
-        except:
-            pass
-    
-        ct_min = -1024
-        ct_max = 3072
-    
-        if not overwrite:
-            try:
-                with np.load(join(numpy_path, fname + '.npz')) as data:
-                    return data['img'], data['mask']
-            except:
-                pass
-    
-        try:
-            itk_img = sitk.ReadImage(join(img_path, img_name))
-            img = sitk.GetArrayFromImage(itk_img)
-            img = np.rollaxis(img, 0, 3)
-            img = img.astype(np.float32)
-            img[img > ct_max] = ct_max
-            img[img < ct_min] = ct_min
-            img += -ct_min
-            img /= (ct_max + -ct_min)
-    
-            if not no_masks:
-                itk_mask = sitk.ReadImage(join(mask_path, img_name))
-                mask = sitk.GetArrayFromImage(itk_mask)
-                mask = np.rollaxis(mask, 0, 3)
-                mask[mask > 250] = 1 # In case using 255 instead of 1
-                mask[mask > 4.5] = 0 # Trachea = 5
-                mask[mask >= 1] = 1 # Left lung = 3, Right lung = 4
-                mask[mask != 1] = 0 # Non-Lung/Background
-                mask = mask.astype(np.uint8)
-    
-            try:
-                f, ax = plt.subplots(1, 3, figsize=(15, 5))
-    
-                ax[0].imshow(img[:, :, img.shape[2] // 3], cmap='gray')
-                if not no_masks:
-                    ax[0].imshow(mask[:, :, img.shape[2] // 3], alpha=0.15)
-                ax[0].set_title('Slice {}/{}'.format(img.shape[2] // 3, img.shape[2]))
-                ax[0].axis('off')
-    
-                ax[1].imshow(img[:, :, img.shape[2] // 2], cmap='gray')
-                if not no_masks:
-                    ax[1].imshow(mask[:, :, img.shape[2] // 2], alpha=0.15)
-                ax[1].set_title('Slice {}/{}'.format(img.shape[2] // 2, img.shape[2]))
-                ax[1].axis('off')
-    
-                ax[2].imshow(img[:, :, img.shape[2] // 2 + img.shape[2] // 4], cmap='gray')
-                if not no_masks:
-                    ax[2].imshow(mask[:, :, img.shape[2] // 2 + img.shape[2] // 4], alpha=0.15)
-                ax[2].set_title('Slice {}/{}'.format(img.shape[2] // 2 + img.shape[2] // 4, img.shape[2]))
-                ax[2].axis('off')
-    
-                fig = plt.gcf()
-                fig.suptitle(fname)
-    
-                plt.savefig(join(fig_path, fname + '.png'), format='png', bbox_inches='tight')
-                plt.close(fig)
-            except Exception as e:
-                print('\n'+'-'*100)
-                print('Error creating qualitative figure for {}'.format(fname))
-                print(e)
-                print('-'*100+'\n')
-    
-            if not no_masks:
-                np.savez_compressed(join(numpy_path, fname + '.npz'), img=img, mask=mask)
-            else:
-                np.savez_compressed(join(numpy_path, fname + '.npz'), img=img)
-    
-            if not no_masks:
-                return img, mask
-            else:
-                return img
-    
-        except Exception as e:
-            print('\n'+'-'*100)
-            print('Unable to load img or masks for {}'.format(fname))
-            print(e)
-            print('Skipping file')
-            print('-'*100+'\n')
-    
-            return np.zeros(1), np.zeros(1)
     
     def flip_axis(self, x, axis):
         x = np.asarray(x).swapaxes(axis, 0)
@@ -314,10 +219,10 @@ class image_2D(object):
                              fill_mode='constant', cval=0.)
     
             if np.random.randint(0, 10) == 7:
-                img_and_mask = flip_axis(img_and_mask, axis=1)
+                img_and_mask = self.flip_axis(img_and_mask, axis=1)
     
             if np.random.randint(0, 10) == 7:
-                img_and_mask = flip_axis(img_and_mask, axis=0)
+                img_and_mask = self.flip_axis(img_and_mask, axis=0)
     
             if np.random.randint(0, 10) == 7:
                 salt_pepper_noise(img_and_mask, salt=0.2, amount=0.04)
@@ -342,6 +247,7 @@ class image_2D(object):
                                stride=1, downSampAmt=1, shuff=1, aug_data=1):
         # Create placeholders for training
         # (img_shape[1], img_shape[2], args.slices)
+        print('==>base_generate_train_batches')        
         img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
         mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
     
@@ -359,7 +265,7 @@ class image_2D(object):
                         train_mask = data['mask']
                 except:
                     print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
-                    train_img, train_mask = convert_data_to_numpy(root_path, scan_name)
+                    train_img, train_mask = self.convert_data_to_numpy(root_path, scan_name)
                     if np.array_equal(train_img,np.zeros(1)):
                         continue
                     else:
@@ -393,7 +299,7 @@ class image_2D(object):
                     if count % batchSize == 0:
                         count = 0
                         if aug_data:
-                            img_batch, mask_batch = augmentImages(img_batch, mask_batch)
+                            img_batch, mask_batch = self.augmentImages(img_batch, mask_batch)
                         if debug:
                             if img_batch.ndim == 4:
                                 plt.imshow(np.squeeze(img_batch[0, :, :, 0]), cmap='gray')
@@ -410,7 +316,7 @@ class image_2D(object):
     
             if count != 0:
                 if aug_data:
-                    img_batch[:count,...], mask_batch[:count,...] = augmentImages(img_batch[:count,...],
+                    img_batch[:count,...], mask_batch[:count,...] = self.augmentImages(img_batch[:count,...],
                                                                                   mask_batch[:count,...])
                 if net.find('caps') != -1:
                     yield ([img_batch[:count, ...], mask_batch[:count, ...]],
@@ -421,6 +327,7 @@ class image_2D(object):
     @threadsafe_generator
     def generate_val_batches(self, root_path, val_list, net_input_shape, net, batchSize=1, numSlices=1, subSampAmt=-1,
                              stride=1, downSampAmt=1, shuff=1):
+        print('==>base_generate_val_batches')
         # Create placeholders for validation
         img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
         mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
@@ -438,7 +345,7 @@ class image_2D(object):
                         val_mask = data['mask']
                 except:
                     print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
-                    val_img, val_mask = convert_data_to_numpy(root_path, scan_name)
+                    val_img, val_mask = self.convert_data_to_numpy(root_path, scan_name)
                     if np.array_equal(val_img,np.zeros(1)):
                         continue
                     else:
@@ -499,7 +406,7 @@ class image_2D(object):
                     test_img = data['img']
             except:
                 print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
-                test_img = convert_data_to_numpy(root_path, scan_name, no_masks=True)
+                test_img = self.convert_data_to_numpy(root_path, scan_name, no_masks=True)
                 if np.array_equal(test_img,np.zeros(1)):
                     continue
                 else:
