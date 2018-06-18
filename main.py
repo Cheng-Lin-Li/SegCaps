@@ -22,32 +22,38 @@ time = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
 
 from keras.utils import print_summary
 
-from load_3D_data import load_data, split_data
 from model_helper import create_model
 import matplotlib.pyplot as plt
 import cv2
+from data_helper import get_data_helper
+
+
 
 def main(args):
     # Ensure training, testing, and manip are not all turned off
     assert (args.train or args.test or args.manip), 'Cannot have train, test, and manip all set to 0, Nothing to do.'
     assert (args.dataset == 'luna16' or args.dataset == 'mscoco17'), 'Only support LUNA 16 or MS COCO 17 dataset.'
+    # Identify image type
+    data_helper = get_data_helper(args.dataset)
+        
     # Load the training, validation, and testing data
     try:
-        train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
+        train_list, val_list, test_list = data_helper.load_data(args.data_root_dir, args.split_num)
+         
     except:
         # Create the training and test splits if not found
         print('No existing training, validate, test files...System will generate it.')
-        split_data(args.data_root_dir, num_splits=4)
-        train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
-
+        data_helper.split_data(args.data_root_dir, num_splits=4)
+        train_list, val_list, test_list = data_helper.load_data(args.data_root_dir, args.split_num)
+             
     # Get image properties from first image. Assume they are all the same.
     print('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
     # Get image shape from the first image.
     image = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0])))
-    img_shape = image.shape #(500,500,4)
-    net_input_shape = (img_shape[1], img_shape[2], args.slices)    
-    
-    if args.dataset == 'mscoco17':
+    img_shape = image.shape #(500,500,4)    
+    if args.dataset == 'luna16':
+        net_input_shape = (img_shape[1], img_shape[2], args.slices)    
+    else:
         args.slices = 1
         img_shape = (RESOLUTION, RESOLUTION, img_shape[2])
         net_input_shape = (img_shape[0], img_shape[1], args.slices)
@@ -127,6 +133,12 @@ if __name__ == '__main__':
     parser.add_argument('--loss', type=str.lower, default='w_bce', choices=['bce', 'w_bce', 'dice', 'mar', 'w_mar'],
                         help='Which loss to use. "bce" and "w_bce": unweighted and weighted binary cross entropy'
                              '"dice": soft dice coefficient, "mar" and "w_mar": unweighted and weighted margin loss.')
+    # TODO: multiclass segmentation.
+    #   # Calculate distance from actual labels using cross entropy
+    # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label_reshaped[:])
+    #   #Take mean for total loss
+    # loss_op = tf.reduce_mean(cross_entropy, name="fcn_loss")
+
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch size for training/testing.')
     parser.add_argument('--initial_lr', type=float, default=0.0001,
@@ -163,8 +175,13 @@ if __name__ == '__main__':
                         help='Number of GPUs you have available for training. '
                              'If entering specific GPU ids under the --which_gpus arg or if using CPU, '
                              'then this number will be inferred, else this argument must be included.')
+    # Enhancements: 
+    # TODO: implement softmax entroyp loss function for multiclass segmentation
     parser.add_argument('--dataset', type=str, default='mscoco17', choices=['luna16', 'mscoco17'],
                         help='Enter "mscoco17" for COCO dataset, "luna16" for CT images')
+    parser.add_argument('--num_class', type=int, default=2, 
+                        help='Number of classes to segment. Default is 2. If number of classes > 2, '
+                            ' the loss function will be softmax entropy and only apply on SegCapsR3') 
     arguments = parser.parse_args()
 
     #
