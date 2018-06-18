@@ -27,7 +27,7 @@ Currently focus on person category data.
 '''
 
 import argparse
-
+from os.path import join, basename
 from pycocotools.coco import COCO
 import numpy as np
 import skimage.io as io
@@ -40,7 +40,7 @@ IMAGE_FOLDER = 'imgs'
 MASK_FOLDER = 'masks'
 
 def main(args):
-    pylab.rcParams['figure.figsize'] = (8.0, 10.0)
+#     pylab.rcParams['figure.figsize'] = (8.0, 10.0)
     plt.ioff()
     
     data_dir = args.data_root_dir
@@ -50,10 +50,10 @@ def main(args):
     file_name = ''
  
     #Create path for output
-    output_image_path = data_dir+'/'+IMAGE_FOLDER
+    output_image_path = join(data_dir, IMAGE_FOLDER)
     if not os.path.isdir(output_image_path):
         os.makedirs (output_image_path) 
-    output_mask_path = data_dir+'/'+MASK_FOLDER   
+    output_mask_path = join(data_dir, MASK_FOLDER) 
     if not os.path.isdir(output_mask_path):
         os.makedirs (output_mask_path)    
  
@@ -72,7 +72,7 @@ def main(args):
         # use url to load image
         I = io.imread(img['coco_url'])
         plt.axis('off')
-        file_name = output_image_path+'/'+FILE_MIDDLE_NAME+str(i)+'.png'
+        file_name = join(output_image_path, FILE_MIDDLE_NAME+str(i)+'.png')
         plt.imsave(file_name, I)
          
         # Get annotation
@@ -82,11 +82,11 @@ def main(args):
          
         # Generate mask
         for j in range(len(anns)):
-             mask += coco.annToMask(anns[j])
+            mask += coco.annToMask(anns[j])
          
-        # Background color = (R,G,B)=(68, 1, 84)
+        # Background color = (R,G,B)=[68, 1, 84]
         # save the mask image
-        file_name = output_mask_path+'/m_'+FILE_MIDDLE_NAME+str(i)+'.png'
+        file_name = join(output_mask_path, FILE_MIDDLE_NAME+str(i)+'.png')
         plt.imsave(file_name, mask)
          
     print('Image Generation Complete !')
