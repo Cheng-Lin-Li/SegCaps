@@ -18,16 +18,17 @@ A project page for this work can be found at https://rodneylalonde.wixsite.com/p
     1-3. Execute train function on 3 images. (Jun 12)
     1-4. Execute test function on trained model (Jun 12)
     1-5. Display original image and result mask image. (Jun 12)
-    1-6. Identify input image mask format. 
+    1-6. Identify input image mask format. (Jun 17)
   2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
     2-1. Identify COCO stuff 2017 as target dataset.
     2-2. Download annotation files for COCO 2017.
   3. Test existing program on color images.
     3-1. Generate single class mask on COCO masked image data.(Jun 13)
-    3-2. Convert the image mask format to background=0, objects=1. 
-    3-3. Feed the color images with single class mask to model.
+    3-2. Convert the image mask format to background=0, objects=1. (Jun 15)
+    3-3. Feed the color images with single class mask to model. (Jun 17)
   4. Modify program for color images.
   5. Modify existing program on multi-classification tasks.
+    5-1. Convert load_2D_data.py=>convert_data_to_numpy() masking functions to support multiclass. 
   6. Integrate model with webcam.
   7. Pipeline up:
     7-1. Modify code to support experiments.
