@@ -17,8 +17,6 @@ Enhancement:
 
 from __future__ import print_function
 
-MASK_FILE_PRE = 'm_'
-
 import threading
 from os.path import join, basename
 from os import mkdir
@@ -34,7 +32,6 @@ from tqdm import tqdm #Progress bar
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import cv2
 
 plt.ioff()
 
@@ -42,33 +39,9 @@ from keras.preprocessing.image import *
 
 from custom_data_aug import elastic_transform, salt_pepper_noise
 import load_data as ld
+from load_data import threadsafe_generator
 
 debug = 0
-
-
-''' Make the generators threadsafe in case of multiple threads '''
-class threadsafe_iter:
-    """Takes an iterator/generator and makes it thread-safe by
-    serializing call to the `next` method of given iterator/generator.
-    """
-    def __init__(self, it):
-        self.it = it
-        self.lock = threading.Lock()
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        with self.lock:
-            return self.it.__next__()
-
-
-def threadsafe_generator(f):
-    """A decorator that takes a generator function and makes it thread-safe.
-    """
-    def g(*a, **kw):
-        return threadsafe_iter(f(*a, **kw))
-    return g
 
 class image_3D(ld.image):
     def __init__(self, dataset='luna16'):
@@ -87,70 +60,6 @@ class image_3D(ld.image):
         new_training_list, validation_list = train_test_split(training_list, test_size=0.1, random_state=7)
     
         return new_training_list, validation_list, testing_list
-    
-    def compute_class_weights(self, root, train_data_list):
-        '''
-            We want to weight the the positive pixels by the ratio of negative to positive.
-            Three scenarios:
-                1. Equal classes. neg/pos ~ 1. Standard binary cross-entropy
-                2. Many more negative examples. The network will learn to always output negative. In this way we want to
-                   increase the punishment for getting a positive wrong that way it will want to put positive more
-                3. Many more positive examples. We weight the positive value less so that negatives have a chance.
-        '''
-        pos = 0.0
-        neg = 0.0
-        for img_name in tqdm(train_data_list):
-            img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', MASK_FILE_PRE+img_name[0])))
-            for slic in img:
-                if not np.any(slic):
-                    continue
-                else:
-                    p = np.count_nonzero(slic)
-                    pos += p
-                    neg += (slic.size - p)
-    
-        return neg/pos
-    
-    def load_class_weights(self, root, split):
-        class_weight_filename = join(root, 'split_lists', 'train_split_' + str(split) + '_class_weights.npy')
-        try:
-            return np.load(class_weight_filename)
-        except:
-            print('Class weight file {} not found.\nComputing class weights now. This may take '
-                  'some time.'.format(class_weight_filename))
-            train_data_list, _, _ = self.load_data(root, str(split))
-            value = self.compute_class_weights(root, train_data_list)
-            np.save(class_weight_filename,value)
-            print('Finished computing class weights. This value has been saved for this training split.')
-            return value
-    
-    
-    def split_data(self, root_path, num_splits=4):
-        mask_list = []
-        for ext in ('*.mhd', '*.hdr', '*.nii', '*.png'): #add png file support
-            mask_list.extend(sorted(glob(join(root_path,'imgs',ext)))) # check imgs instead of masks
-    
-        assert len(mask_list) != 0, 'Unable to find any files in {}'.format(join(root_path,'imgs'))
-    
-        outdir = join(root_path,'split_lists')
-        try:
-            mkdir(outdir)
-        except:
-            pass
-    
-        kf = KFold(n_splits=num_splits)
-        n = 0
-        for train_index, test_index in kf.split(mask_list):
-            with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                for i in train_index:
-                    print('basename=%s'%([basename(mask_list[i])]))
-                    writer.writerow([basename(mask_list[i])])
-            with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                for i in test_index:
-                    writer.writerow([basename(mask_list[i])])
-            n += 1
     
     
     def convert_data_to_numpy(self, root_path, img_name, no_masks=False, overwrite=False):
@@ -305,7 +214,9 @@ class image_3D(ld.image):
     
         return(batch_of_images, batch_of_masks)
 
-
+    def get_slice(self, image_data):
+        return image_data[0]
+    
     @threadsafe_generator
     def generate_train_batches(self, root_path, train_list, net_input_shape, net, batchSize=1, numSlices=1, subSampAmt=-1,
                                stride=1, downSampAmt=1, shuff=1, aug_data=1):
@@ -340,7 +251,7 @@ class image_3D(ld.image):
                 elif subSampAmt == -1 and numSlices > 1:
                     np.random.seed(None)
                     subSampAmt = int(rand(1)*(train_img.shape[2]*0.05))
-    
+                # (512, 512, 161) for Luna16 - 161 channels
                 indicies = np.arange(0, train_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
                 if shuff:
                     shuffle(indicies)

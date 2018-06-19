@@ -44,9 +44,6 @@ from custom_data_aug import elastic_transform, salt_pepper_noise
 
 debug = 0
 
-
-
-
 ''' Make the generators threadsafe in case of multiple threads '''
 class threadsafe_iter:
     """Takes an iterator/generator and makes it thread-safe by
@@ -133,7 +130,7 @@ class image():
         pos = 0.0
         neg = 0.0
         for img_name in tqdm(train_data_list):
-            img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', MASK_FILE_PRE+img_name[0])))
+            img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', img_name[0])))
             for slic in img:
                 if not np.any(slic):
                     continue
