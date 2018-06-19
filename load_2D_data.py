@@ -17,8 +17,6 @@ Enhancement:
 
 from __future__ import print_function
 
-MASK_FILE_PRE = 'm_'
-
 import threading
 import load_data as ld
 from os.path import join, basename
@@ -43,35 +41,12 @@ from keras.preprocessing.image import *
 
 from custom_data_aug import elastic_transform, salt_pepper_noise
 import load_data as ld
+from load_data import threadsafe_generator
 
 debug = 0
 IMAGE_SIZE = 512
 COCO_BACKGROUND = (61, 1, 84, 255)
 MASK_BACKGROUND = (0,0,0,0)
-
-''' Make the generators threadsafe in case of multiple threads '''
-class threadsafe_iter:
-    """Takes an iterator/generator and makes it thread-safe by
-    serializing call to the `next` method of given iterator/generator.
-    """
-    def __init__(self, it):
-        self.it = it
-        self.lock = threading.Lock()
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        with self.lock:
-            return self.it.__next__()
-
-
-def threadsafe_generator(f):
-    """A decorator that takes a generator function and makes it thread-safe.
-    """
-    def g(*a, **kw):
-        return threadsafe_iter(f(*a, **kw))
-    return g
 
 class image_2D(ld.image):
     def __init__(self, dataset='mscoco17'):
@@ -123,70 +98,6 @@ class image_2D(ld.image):
     
         return new_training_list, validation_list, testing_list
     
-    def compute_class_weights(self, root, train_data_list):
-        '''
-            We want to weight the the positive pixels by the ratio of negative to positive.
-            Three scenarios:
-                1. Equal classes. neg/pos ~ 1. Standard binary cross-entropy
-                2. Many more negative examples. The network will learn to always output negative. In this way we want to
-                   increase the punishment for getting a positive wrong that way it will want to put positive more
-                3. Many more positive examples. We weight the positive value less so that negatives have a chance.
-        '''
-        pos = 0.0
-        neg = 0.0
-        for img_name in tqdm(train_data_list):
-            img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', MASK_FILE_PRE+img_name[0])))
-            for slic in img:
-                if not np.any(slic):
-                    continue
-                else:
-                    p = np.count_nonzero(slic)
-                    pos += p
-                    neg += (slic.size - p)
-    
-        return neg/pos
-    
-    def load_class_weights(self, root, split):
-        class_weight_filename = join(root, 'split_lists', 'train_split_' + str(split) + '_class_weights.npy')
-        try:
-            return np.load(class_weight_filename)
-        except:
-            print('Class weight file {} not found.\nComputing class weights now. This may take '
-                  'some time.'.format(class_weight_filename))
-            train_data_list, _, _ = self.load_data(root, str(split))
-            value = self.compute_class_weights(root, train_data_list)
-            np.save(class_weight_filename,value)
-            print('Finished computing class weights. This value has been saved for this training split.')
-            return value
-    
-    
-    def split_data(self, root_path, num_splits=4):
-        mask_list = []
-        for ext in ('*.mhd', '*.hdr', '*.nii', '*.png'): #add png file support
-            mask_list.extend(sorted(glob(join(root_path,'imgs',ext)))) # check imgs instead of masks
-    
-        assert len(mask_list) != 0, 'Unable to find any files in {}'.format(join(root_path,'imgs'))
-    
-        outdir = join(root_path,'split_lists')
-        try:
-            mkdir(outdir)
-        except:
-            pass
-    
-        kf = KFold(n_splits=num_splits)
-        n = 0
-        for train_index, test_index in kf.split(mask_list):
-            with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                for i in train_index:
-                    print('basename=%s'%([basename(mask_list[i])]))
-                    writer.writerow([basename(mask_list[i])])
-            with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                for i in test_index:
-                    writer.writerow([basename(mask_list[i])])
-            n += 1
-    
     def change_background_color(self, img, original_color, new_color):
         '''
         Convert mask color of 4 channels png image to new color 
@@ -229,23 +140,16 @@ class image_2D(ld.image):
             itk_img = sitk.ReadImage(join(img_path, img_name))
             img = sitk.GetArrayFromImage(itk_img)
             img = self.image_resize2square(img, IMAGE_SIZE)
-#             img = np.rollaxis(img, 0, 3) # No need for 2D
-#             img = img.astype(np.float32)
-#             img[img > ct_max] = ct_max
-#             img[img < ct_min] = ct_min
-#             img += -ct_min
-#             img /= (ct_max + -ct_min)
+            img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
     
             if not no_masks:
                 itk_mask = sitk.ReadImage(join(mask_path, img_name))
                 mask = sitk.GetArrayFromImage(itk_mask)
                 mask = self.image_resize2square(mask, IMAGE_SIZE)
                 
-                mask = self.change_background_color(mask, COCO_BACKGROUND, MASK_BACKGROUND)              
-#                 mask = np.rollaxis(mask, 0, 3) # No need to switch index in 2D
-#                 mask[mask > 250] = 1 # In case using 255 instead of 1
-#                 mask[mask > 4.5] = 0 # Trachea = 5
-#                 mask[mask >= 1] = 1 # Left lung = 3, Right lung = 4
+                mask = self.change_background_color(mask, COCO_BACKGROUND, MASK_BACKGROUND) 
+                mask = mask[:,:,:3] # Only get RGB channels. Remove alpha channel.      
+
                 mask[mask >= 1] = 1 # Person
                 mask[mask != 1] = 0 # Non Person / Background
                 mask = mask.astype(np.uint8)
@@ -324,7 +228,9 @@ class image_2D(ld.image):
             batch_of_masks[batch_of_masks <= 0.5] = 0
     
         return(batch_of_images, batch_of_masks)
-
+    
+    def get_slice(self, image_data):
+        return image_data[2]
 
     @threadsafe_generator
     def generate_train_batches(self, root_path, train_list, net_input_shape, net, batchSize=1, numSlices=1, subSampAmt=-1,
@@ -357,10 +263,10 @@ class image_2D(ld.image):
     
                 if numSlices == 1:
                     subSampAmt = 0
-                elif subSampAmt == -1 and numSlices > 1:
+                elif subSampAmt == -1 and numSlices > 1: # Only one slices. code can be removed.
                     np.random.seed(None)
                     subSampAmt = int(rand(1)*(train_img.shape[2]*0.05))
-    
+                # We don't need indicies in 2D image.
                 indicies = np.arange(0, train_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
                 if shuff:
                     shuffle(indicies)
@@ -434,12 +340,6 @@ class image_2D(ld.image):
                         continue
                     else:
                         print('\nFinished making npz file.')
-    
-                if numSlices == 1:
-                    subSampAmt = 0
-                elif subSampAmt == -1 and numSlices > 1:
-                    np.random.seed(None)
-                    subSampAmt = int(rand(1)*(val_img.shape[2]*0.05))
     
                 indicies = np.arange(0, val_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
                 if shuff:
