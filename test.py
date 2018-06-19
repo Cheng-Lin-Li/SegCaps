@@ -130,10 +130,11 @@ def test(args, test_list, model_list, net_input_shape):
 
         for i, img in enumerate(tqdm(test_list)):
             # Pick up the first image file in imgs folder.
-            # TODO: Modify to read image files in test folder.
             sitk_img = sitk.ReadImage(join(args.data_root_dir, 'imgs', img[0]))
             img_data = sitk.GetArrayFromImage(sitk_img)
-            num_slices = img_data.shape[0]
+ 
+            num_slices = data_helper.get_slice(img_data)
+                
             print('test.test: eval_model.predict_generator')
             output_array = eval_model.predict_generator(data_helper.generate_test_batches(args.data_root_dir, [img],
                                                                               net_input_shape,
