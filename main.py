@@ -18,7 +18,7 @@ from os import environ
 import argparse
 import SimpleITK as sitk #image process
 from time import gmtime, strftime
-time = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
+time = strftime("%Y%m%d_%H:%M:%S", gmtime())
 
 from keras.utils import print_summary
 
