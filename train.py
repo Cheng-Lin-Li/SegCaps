@@ -158,7 +158,7 @@ def train(args, train_list, val_list, u_model, net_input_shape):
 #         verbose=1)
 
 # POC testing
-    # Identify image type
+    # Identify image typenum_slices = img_data.shape[0]
     data_helper = get_data_helper(args.dataset)
     print('==>train')
     history = model.fit_generator(
@@ -166,12 +166,12 @@ def train(args, train_list, val_list, u_model, net_input_shape):
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
                                stride=args.stride, shuff=args.shuffle_data, aug_data=args.aug_data),
         max_queue_size=40, workers=4, use_multiprocessing=False,
-        steps_per_epoch=10,
+        steps_per_epoch=100,
         validation_data=data_helper.generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
                                              batchSize=args.batch_size,  numSlices=args.slices, subSampAmt=0,
                                              stride=20, shuff=args.shuffle_data),
         validation_steps=5, # Set validation stride larger to see more of the data.
-        epochs=1,
+        epochs=3,
         callbacks=callbacks,
         verbose=1)
     # Plot the training data collected
