@@ -29,9 +29,9 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 from keras.utils import print_summary
 
-from data_helper import get_data_helper
-# from load_3D_data import generate_test_batches
+from data_helper import *
 
+IMAGE_SIZE = 512
 
 def threshold_mask(raw_output, threshold):
     if threshold == 0:
@@ -69,9 +69,7 @@ def test(args, test_list, model_list, net_input_shape):
         weights_path = join(args.check_dir, args.output_name + '_model_' + args.time + '.hdf5')
     else:
         weights_path = join(args.data_root_dir, args.weights_path)
-    
-    data_helper = get_data_helper(args.dataset)
-    
+
     output_dir = join(args.data_root_dir, 'results', args.net, 'split_' + str(args.split_num))
     raw_out_dir = join(output_dir, 'raw_output')
     fin_out_dir = join(output_dir, 'final_output')
@@ -129,14 +127,16 @@ def test(args, test_list, model_list, net_input_shape):
         writer.writerow(row)
 
         for i, img in enumerate(tqdm(test_list)):
-            # Pick up the first image file in imgs folder.
             sitk_img = sitk.ReadImage(join(args.data_root_dir, 'imgs', img[0]))
             img_data = sitk.GetArrayFromImage(sitk_img)
- 
-            num_slices = data_helper.get_slice(img_data)
-                
+            # TODO: Change RGB to single slice of grayscale image.
+            if args.dataset == 'luna16':
+                num_slices = img_data.shape[0]
+            else: # For MS COCO 2017 dataset
+                num_slices = 3 # Treat RGB as three slices.
             print('test.test: eval_model.predict_generator')
-            output_array = eval_model.predict_generator(data_helper.generate_test_batches(args.data_root_dir, [img],
+            generate_test_batches = get_test_batches_generator(args.dataset)
+            output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
                                                                               net_input_shape,
                                                                               batchSize=args.batch_size,
                                                                               numSlices=args.slices,
@@ -162,13 +162,11 @@ def test(args, test_list, model_list, net_input_shape):
             print('Saving Output')
             sitk.WriteImage(output_img, join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]))
             sitk.WriteImage(output_mask, join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]))
-
+    
             # Load gt mask
-            # Load truth labels from the first file in masks folder.
-            # TODO: Change to test folder.
             sitk_mask = sitk.ReadImage(join(args.data_root_dir, 'masks', img[0]))
             gt_data = sitk.GetArrayFromImage(sitk_mask)
-
+                
             # Plot Qual Figure
             print('Creating Qualitative Figure for Quick Reference')
             f, ax = plt.subplots(1, 3, figsize=(15, 5))

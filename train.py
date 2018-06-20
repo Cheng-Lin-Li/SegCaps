@@ -26,21 +26,22 @@ K.set_image_data_format('channels_last')
 from keras.utils.training_utils import multi_gpu_model
 from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping, ReduceLROnPlateau, TensorBoard
 import tensorflow as tf
-# from load_3D_data import generate_test_batches
-from custom_losses import dice_hard, weighted_binary_crossentropy_loss, dice_loss, margin_loss
-from data_helper import get_data_helper
 
-def get_loss(data_helper, root, split, net, recon_wei, choice):
-    
+from custom_losses import dice_hard, weighted_binary_crossentropy_loss, dice_loss, margin_loss
+
+from data_helper import *
+
+
+def get_loss(root, split, net, recon_wei, choice):
     if choice == 'w_bce':
-        pos_class_weight = data_helper.load_class_weights(root=root, split=split)
+        pos_class_weight = load_class_weights(root=root, split=split)
         loss = weighted_binary_crossentropy_loss(pos_class_weight)
     elif choice == 'bce':
         loss = 'binary_crossentropy'
-    elif choice == 'dice': # https://dev.to/andys0975/what-is-dice-loss-for-image-segmentation-3p85
+    elif choice == 'dice':
         loss = dice_loss
     elif choice == 'w_mar':
-        pos_class_weight = data_helper.load_class_weights(root=root, split=split)
+        pos_class_weight = load_class_weights(root=root, split=split)
         loss = margin_loss(margin=0.4, downweight=0.5, pos_weight=pos_class_weight)
     elif choice == 'mar':
         loss = margin_loss(margin=0.4, downweight=0.5, pos_weight=1.0)
@@ -68,7 +69,6 @@ def get_callbacks(arguments):
 
     return [model_checkpoint, csv_logger, lr_reducer, early_stopper, tb]
 
-
 def compile_model(args, net_input_shape, uncomp_model):
     # Set optimizer loss and metrics
     opt = Adam(lr=args.initial_lr, beta_1=0.99, beta_2=0.999, decay=1e-6)
@@ -77,10 +77,7 @@ def compile_model(args, net_input_shape, uncomp_model):
     else:
         metrics = [dice_hard]
 
-    # Identify image typeget_data_helper
-    data_helper = get_data_helper(args.dataset)
-        
-    loss, loss_weighting = get_loss(data_helper, root=args.data_root_dir, split=args.split_num, net=args.net,
+    loss, loss_weighting = get_loss(root=args.data_root_dir, split=args.split_num, net=args.net,
                                     recon_wei=args.recon_wei, choice=args.loss)
 
     # If using CPU or single GPU
@@ -158,20 +155,19 @@ def train(args, train_list, val_list, u_model, net_input_shape):
 #         verbose=1)
 
 # POC testing
-    # Identify image typenum_slices = img_data.shape[0]
-    data_helper = get_data_helper(args.dataset)
-    print('==>train')
+    generate_train_batches = get_train_batches_generator(args.dataset)
+    generate_val_batches = get_val_batches_generator(args.dataset)
     history = model.fit_generator(
-        data_helper.generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
+        generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
                                stride=args.stride, shuff=args.shuffle_data, aug_data=args.aug_data),
         max_queue_size=40, workers=4, use_multiprocessing=False,
-        steps_per_epoch=100,
-        validation_data=data_helper.generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
+        steps_per_epoch=10,
+        validation_data=generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
                                              batchSize=args.batch_size,  numSlices=args.slices, subSampAmt=0,
                                              stride=20, shuff=args.shuffle_data),
-        validation_steps=5, # Set validation stride larger to see more of the data.
-        epochs=3,
+        validation_steps=100, # Set validation stride larger to see more of the data.
+        epochs=1,
         callbacks=callbacks,
         verbose=1)
     # Plot the training data collected

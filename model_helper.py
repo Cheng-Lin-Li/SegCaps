@@ -51,7 +51,7 @@ def create_model(args, input_shape):
                 return model_list
             elif args.net == 'segcapsr3':
                 from capsnet import CapsNetR3
-                model_list = CapsNetR3(input_shape)
+                model_list = CapsNetR3(input_shape, args.num_class)
                 return model_list
             elif args.net == 'capsbasic':
                 from capsnet import CapsNetBasic
