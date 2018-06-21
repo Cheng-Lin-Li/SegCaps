@@ -126,14 +126,14 @@ def test(args, test_list, model_list, net_input_shape):
 
         writer.writerow(row)
 
-        for i, img in enumerate(tqdm(test_list)):
+        for i, img in enumerate((test_list)):
             sitk_img = sitk.ReadImage(join(args.data_root_dir, 'imgs', img[0]))
             img_data = sitk.GetArrayFromImage(sitk_img)
             # TODO: Change RGB to single slice of grayscale image.
             if args.dataset == 'luna16':
                 num_slices = img_data.shape[0]
             else: # For MS COCO 2017 dataset
-                num_slices = 3 # Treat RGB as three slices.
+                num_slices = 1 # Treat RGB as three slices.
             print('test.test: eval_model.predict_generator')
             generate_test_batches = get_test_batches_generator(args.dataset)
             output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
@@ -146,22 +146,38 @@ def test(args, test_list, model_list, net_input_shape):
                                                         use_multiprocessing=False, verbose=1)
             print('test.test: output_array=%s'%(output_array))
             if args.net.find('caps') != -1:
-                output = output_array[0][:,:,:,0]
+                output = output_array[0][:,:,:,0] # A list with two images, get first one image.
                 #recon = output_array[1][:,:,:,0]
             else:
                 output = output_array[:,:,:,0]
 
-            output_img = sitk.GetImageFromArray(output)
-            print('Segmenting Output')
-            output_bin = threshold_mask(output, args.thresh_level)
-            output_mask = sitk.GetImageFromArray(output_bin)
+            # Get a SimpleITK Image from a numpy array. 
+            # If isVector is True, then a 3D array will be treaded as a 2D vector image, 
+            # otherwise it will be treaded as a 3D image
+            if (args.dataset == 'luna16'):
+                output_img = sitk.GetImageFromArray(output)
+                print('Segmenting Output')
+                output_bin = threshold_mask(output, args.thresh_level)
+                output_mask = sitk.GetImageFromArray(output_bin)   
 
-            output_img.CopyInformation(sitk_img)
-            output_mask.CopyInformation(sitk_img)
+                output_img.CopyInformation(sitk_img)            
+                output_mask.CopyInformation(sitk_img)       
+                    
+                print('Saving Output')
+                sitk.WriteImage(output_img, join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]))
+                sitk.WriteImage(output_mask, join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]))
+                                                  
+            else: # 2D image
+                # output.shape = (1, 512, 512)
+                # output[0,:,:] = (512, 512)
+                output_img = sitk.GetImageFromArray(output[0,:,:], isVector=True)
+                print('Segmenting Output')
+                output_bin = threshold_mask(output, args.thresh_level)
+                output_mask = sitk.GetImageFromArray(output_bin[0,:,:], isVector=True)
 
-            print('Saving Output')
-            sitk.WriteImage(output_img, join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]))
-            sitk.WriteImage(output_mask, join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]))
+                print('Saving Output')                
+                plt.imsave(join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]), output_img)
+                plt.imsave(join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]), output_mask)
     
             # Load gt mask
             sitk_mask = sitk.ReadImage(join(args.data_root_dir, 'masks', img[0]))
