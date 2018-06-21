@@ -27,13 +27,13 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm #Progress bar
 
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import cv2
 
 plt.ioff()
 import threading
-from load_data import augmentImages, image_resize2square
+from load_data import augmentImages, threadsafe_generator, image_resize2square
 
 # 
 # def flip_axis(x, axis):
@@ -80,9 +80,6 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     except:
         pass
 
-#         ct_min = -1024 # No need for 2d image
-#         ct_max = 3072
-
     if not overwrite:
         try:
             with np.load(join(numpy_path, fname + '.npz')) as data:
@@ -93,8 +90,14 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     try:
         itk_img = sitk.ReadImage(join(img_path, img_name))
         img = sitk.GetArrayFromImage(itk_img)
+        # The source image should be 512X512 resolution.
         img = image_resize2square(img, IMAGE_SIZE)
-        img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
+        # TODO computing by color image
+#         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
+        # Translate the image to grayscale
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY )
+        img = img.reshape([img.shape[0], img.shape[1], 1])
+        pass
 
         if not no_masks:
             itk_mask = sitk.ReadImage(join(mask_path, img_name))
@@ -102,9 +105,10 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             mask = image_resize2square(mask, IMAGE_SIZE)
             
             mask = change_background_color(mask, COCO_BACKGROUND, MASK_BACKGROUND) 
-            mask = mask[:,:,:3] # Only get RGB channels. Remove alpha channel.      
+#             mask = mask[:,:,:3] # Only get RGB channels. Remove alpha channel.      
+            mask = mask[:,:,:1]
 
-            mask[mask >= 1] = 1 # Person
+            mask[mask >= 1] = 1 # The mask. ie. class of Person
             mask[mask != 1] = 0 # Non Person / Background
             mask = mask.astype(np.uint8)
 

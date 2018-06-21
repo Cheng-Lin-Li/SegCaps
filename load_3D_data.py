@@ -30,7 +30,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm #Progress bar
 
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import cv2
 
@@ -39,7 +39,7 @@ plt.ioff()
 from keras.preprocessing.image import *
 
 from custom_data_aug import elastic_transform, salt_pepper_noise
-from load_data import augmentImages
+from load_data import augmentImages, threadsafe_generator
 
 debug = 0
 
@@ -234,29 +234,6 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
 #     return(batch_of_images, batch_of_masks)
 
 
-''' Make the generators threadsafe in case of multiple threads '''
-class threadsafe_iter:
-    """Takes an iterator/generator and makes it thread-safe by
-    serializing call to the `next` method of given iterator/generator.
-    """
-    def __init__(self, it):
-        self.it = it
-        self.lock = threading.Lock()
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        with self.lock:
-            return self.it.__next__()
-
-
-def threadsafe_generator(f):
-    """A decorator that takes a generator function and makes it thread-safe.
-    """
-    def g(*a, **kw):
-        return threadsafe_iter(f(*a, **kw))
-    return g
 
 @threadsafe_generator
 def generate_train_batches(root_path, train_list, net_input_shape, net, batchSize=1, numSlices=1, subSampAmt=-1,
