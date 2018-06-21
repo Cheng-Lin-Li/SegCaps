@@ -42,6 +42,30 @@ from custom_data_aug import elastic_transform, salt_pepper_noise
 
 debug = 0
 
+''' Make the generators threadsafe in case of multiple threads '''
+class threadsafe_iter:
+    """Takes an iterator/generator and makes it thread-safe by
+    serializing call to the `next` method of given iterator/generator.
+    """
+    def __init__(self, it):
+        self.it = it
+        self.lock = threading.Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.lock:
+            return self.it.__next__()
+
+
+def threadsafe_generator(f):
+    """A decorator that takes a generator function and makes it thread-safe.
+    """
+    def g(*a, **kw):
+        return threadsafe_iter(f(*a, **kw))
+    return g
+
 
 def image_resize2square(image, desired_size = None):
     # initialize the dimensions of the image to be resized and
@@ -51,7 +75,7 @@ def image_resize2square(image, desired_size = None):
 
     # if both the width and height are None, then return the
     # original image
-    if desired_size is None:
+    if desired_size is None or (old_size[0]==desired_size and old_size[1]==desired_size):
         return image
 
     # calculate the ratio of the height and construct the
@@ -72,7 +96,6 @@ def image_resize2square(image, desired_size = None):
 
     # return the resized image
     return new_image
-
 
 def load_data(root, split):
     # Load the training and testing lists
