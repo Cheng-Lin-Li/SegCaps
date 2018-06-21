@@ -11,10 +11,10 @@ Tasks: Download specific category images from MSCOCO web and generate pixel leve
 @license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
 
 @contact:    clark.cl.li@gmail.com
-@version:    1.0
+@version:    1.1
 
 @create:    June 13, 2018
-@updated:   June 13, 2018 
+@updated:   June 20, 2018 
 
 Tasks:
 The program implementation leverage pycocotools to batch download images by specific category and generate mask files for image segmentation tasks.
