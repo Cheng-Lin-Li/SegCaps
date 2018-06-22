@@ -103,7 +103,12 @@ def main(args):
      
         # use url to load image
         I = io.imread(img['coco_url'])
-        I = image_resize2square(I, RESOLUTION)
+        resolution = args.resolution
+        if resolution != 0:
+            I = image_resize2square(I, args.resolution)
+        else:
+            pass
+        
         plt.axis('off')
         file_name = join(output_image_path, FILE_MIDDLE_NAME+str(i)+'.png')
         plt.imsave(file_name, I)
@@ -119,7 +124,7 @@ def main(args):
          
         # Background color = (R,G,B)=[68, 1, 84]
         # save the mask image
-        mask = image_resize2square(mask, RESOLUTION)
+        mask = image_resize2square(mask, args.resolution)
         file_name = join(output_mask_path, FILE_MIDDLE_NAME+str(i)+'.png')
         plt.imsave(file_name, mask)
          
@@ -140,6 +145,10 @@ if __name__ == '__main__':
                         help='MS COCO object categories list (--category person dog cat). default value is person')
     parser.add_argument('--annotation_file', type=str, default='./instances_val2017.json',
                         help='The annotation json file directory of MS COCO object categories list. file name should be instances_val2017.json')    
+    parser.add_argument('--resolution', type=int, default=512,
+                        help='The resolution of images you want to transfer. It will be a square image.'
+                        'Default resolution is 512. resolution = 0 will keep original image resolution')
+    
     parser.add_argument('--number', type=int, default=10,
                         help='The total number of images you want to download.')    
 
