@@ -25,6 +25,7 @@ from numpy.random import rand, shuffle
 import SimpleITK as sitk
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm #Progress bar
+from PIL import Image
 
 import matplotlib
 # matplotlib.use('Agg')
@@ -49,7 +50,7 @@ from load_data import augmentImages, threadsafe_generator, image_resize2square
 
 debug = 0
 IMAGE_SIZE = 512
-COCO_BACKGROUND = (61, 1, 84, 255)
+COCO_BACKGROUND = (68, 1, 84, 255)
 MASK_BACKGROUND = (0,0,0,0)      
 
 def change_background_color(img, original_color, new_color):
@@ -95,9 +96,9 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
         # TODO computing by color image
 #         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
         # Translate the image to grayscale
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY )
+        img = np.array(Image.fromarray(img).convert('L'))  
         img = img.reshape([img.shape[0], img.shape[1], 1])
-        pass
+        
 
         if not no_masks:
             itk_mask = sitk.ReadImage(join(mask_path, img_name))
@@ -169,7 +170,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
                            stride=1, downSampAmt=1, shuff=1, aug_data=1):
     # Create placeholders for training
     # (img_shape[1], img_shape[2], args.slices)
-    print('==>2d_generate_train_batches')
+    print('\n==>2d_generate_train_batches')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
 
@@ -181,7 +182,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
             try:
                 scan_name = scan_name[0]
                 path_to_np = join(root_path,'np_files',basename(scan_name)[:-3]+'npz')
-                print('==>path_to_np=%s'%(path_to_np))
+                print('\n==>path_to_np=%s'%(path_to_np))
                 with np.load(path_to_np) as data:
                     train_img = data['img']
                     train_mask = data['mask']
