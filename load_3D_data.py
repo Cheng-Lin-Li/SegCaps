@@ -43,44 +43,6 @@ from load_data import augmentImages, threadsafe_generator
 
 debug = 0
 
-# 
-# def compute_class_weights(root, train_data_list):
-#     '''
-#         We want to weight the the positive pixels by the ratio of negative to positive.
-#         Three scenarios:
-#             1. Equal classes. neg/pos ~ 1. Standard binary cross-entropy
-#             2. Many more negative examples. The network will learn to always output negative. In this way we want to
-#                increase the punishment for getting a positive wrong that way it will want to put positive more
-#             3. Many more positive examples. We weight the positive value less so that negatives have a chance.
-#     '''
-#     pos = 0.0
-#     neg = 0.0
-#     for img_name in tqdm(train_data_list):
-#         img = sitk.GetArrayFromImage(sitk.ReadImage(join(root, 'masks', img_name[0])))
-#         for slic in img:
-#             if not np.any(slic):
-#                 continue
-#             else:
-#                 p = np.count_nonzero(slic)
-#                 pos += p
-#                 neg += (slic.size - p)
-# 
-#     return neg/pos
-
-# def load_class_weights(root, split):
-#     class_weight_filename = join(root, 'split_lists', 'train_split_' + str(split) + '_class_weights.npy')
-#     try:
-#         return np.load(class_weight_filename)
-#     except:
-#         print('Class weight file {} not found.\nComputing class weights now. This may take '
-#               'some time.'.format(class_weight_filename))
-#         train_data_list, _, _ = load_data(root, str(split))
-#         value = compute_class_weights(root, train_data_list)
-#         np.save(class_weight_filename,value)
-#         print('Finished computing class weights. This value has been saved for this training split.')
-#         return value
-
-
 def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     fname = img_name[:-4]
     numpy_path = join(root_path, 'np_files')
@@ -176,63 +138,6 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
         print('-'*100+'\n')
 
         return np.zeros(1), np.zeros(1)
-# 
-# def flip_axis(x, axis):
-#     x = np.asarray(x).swapaxes(axis, 0)
-#     x = x[::-1, ...]
-#     x = x.swapaxes(0, axis)
-#     return x
-# 
-# def augmentImages(batch_of_images, batch_of_masks):
-#     for i in range(len(batch_of_images)):
-#         img_and_mask = np.concatenate((batch_of_images[i, ...], batch_of_masks[i,...]), axis=2)
-#         if img_and_mask.ndim == 4: # This assumes single channel data. For multi-channel you'll need
-#             # change this to put all channel in slices channel
-#             orig_shape = img_and_mask.shape
-#             img_and_mask = img_and_mask.reshape((img_and_mask.shape[0:3]))
-# 
-#         if np.random.randint(0,10) == 7:
-#             img_and_mask = random_rotation(img_and_mask, rg=45, row_axis=0, col_axis=1, channel_axis=2,
-#                                            fill_mode='constant', cval=0.)
-# 
-#         if np.random.randint(0, 5) == 3:
-#             img_and_mask = elastic_transform(img_and_mask, alpha=1000, sigma=80, alpha_affine=50)
-# 
-#         if np.random.randint(0, 10) == 7:
-#             img_and_mask = random_shift(img_and_mask, wrg=0.2, hrg=0.2, row_axis=0, col_axis=1, channel_axis=2,
-#                                         fill_mode='constant', cval=0.)
-# 
-#         if np.random.randint(0, 10) == 7:
-#             img_and_mask = random_shear(img_and_mask, intensity=16, row_axis=0, col_axis=1, channel_axis=2,
-#                          fill_mode='constant', cval=0.)
-# 
-#         if np.random.randint(0, 10) == 7:
-#             img_and_mask = random_zoom(img_and_mask, zoom_range=(0.75, 0.75), row_axis=0, col_axis=1, channel_axis=2,
-#                          fill_mode='constant', cval=0.)
-# 
-#         if np.random.randint(0, 10) == 7:
-#             img_and_mask = flip_axis(img_and_mask, axis=1)
-# 
-#         if np.random.randint(0, 10) == 7:
-#             img_and_mask = flip_axis(img_and_mask, axis=0)
-# 
-#         if np.random.randint(0, 10) == 7:
-#             salt_pepper_noise(img_and_mask, salt=0.2, amount=0.04)
-# 
-#         if batch_of_images.ndim == 4:
-#             batch_of_images[i, ...] = img_and_mask[...,0:img_and_mask.shape[2]//2]
-#             batch_of_masks[i,...] = img_and_mask[...,img_and_mask.shape[2]//2:]
-#         if batch_of_images.ndim == 5:
-#             img_and_mask = img_and_mask.reshape(orig_shape)
-#             batch_of_images[i, ...] = img_and_mask[...,0:img_and_mask.shape[2]//2, :]
-#             batch_of_masks[i,...] = img_and_mask[...,img_and_mask.shape[2]//2:, :]
-# 
-#         # Ensure the masks did not get any non-binary values.
-#         batch_of_masks[batch_of_masks > 0.5] = 1
-#         batch_of_masks[batch_of_masks <= 0.5] = 0
-# 
-#     return(batch_of_images, batch_of_masks)
-
 
 
 @threadsafe_generator
