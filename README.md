@@ -18,17 +18,16 @@ A project page for this work can be found at https://rodneylalonde.wixsite.com/p
     1-3. Execute train function on 3 images. (Jun 12)
     1-4. Execute test function on trained model (Jun 12)
     1-5. Display original image and result mask image. (Jun 12)
-    1-6. Identify input image mask format. (Jun 17)
+    1-6. Identify input image mask format. 
   2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
     2-1. Identify COCO stuff 2017 as target dataset.
     2-2. Download annotation files for COCO 2017.
   3. Test existing program on color images.
     3-1. Generate single class mask on COCO masked image data.(Jun 13)
-    3-2. Convert the image mask format to background=0, objects=1. (Jun 15)
-    3-3. Feed the color images with single class mask to model. (Jun 17)
+    3-2. Convert the image mask format to background=0, objects=1. 
+    3-3. Feed the color images with single class mask to model.
   4. Modify program for color images.
   5. Modify existing program on multi-classification tasks.
-    5-1. Convert load_2D_data.py=>convert_data_to_numpy() masking functions to support multiclass. 
   6. Integrate model with webcam.
   7. Pipeline up:
     7-1. Modify code to support experiments.
@@ -40,7 +39,7 @@ A project page for this work can be found at https://rodneylalonde.wixsite.com/p
 
 ## Getting Started Guide
 
-### Install Required Packages
+### Install Required Packages on Ubuntu / Windows
 This repo of code is written for Keras using the TensorFlow backend. 
 You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
 
@@ -59,6 +58,23 @@ ImportError: libjasper.so.1: cannot open shared object file: No such file or dir
 sudo apt-get update
 sudo apt-get install libjasper-dev
 ```
+
+### Install package on Raspberry Pi 3
+
+#### Download tensorflow pre-compile version for ARM v7.
+Tensorflow for ARM - Github Repo:
+https://github.com/lhelontra/tensorflow-on-arm/releases
+
+installation instruction.
+
+https://medium.com/@abhizcc/installing-latest-tensor-flow-and-keras-on-raspberry-pi-aac7dbf95f2
+
+
+#### OpenCV installation on Raspberry Pi 3
+https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
+
+
+
 ### Dataset
 
 Test the result on original LUNA 16 dataset.
