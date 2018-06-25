@@ -19,7 +19,7 @@ from os import environ
 import argparse
 import SimpleITK as sitk #image process
 from time import gmtime, strftime
-time = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
+time = strftime("%Y%m%d-%H%M%S", gmtime())
 
 from keras.utils import print_summary
 from data_helper import *
@@ -60,6 +60,9 @@ def main(args):
                        '_loss-' + str(args.loss) + '_slic-' + str(args.slices) + \
                        '_sub-' + str(args.subsamp) + '_strid-' + str(args.stride) + \
                        '_lr-' + str(args.initial_lr) + '_recon-' + str(args.recon_wei)
+
+#     args.output_name = 'sh-' + str(args.shuffle_data) + '_a-' + str(args.aug_data)
+
     args.time = time
 
     args.check_dir = join(args.data_root_dir,'saved_models', args.net)
