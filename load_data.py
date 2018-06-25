@@ -164,12 +164,12 @@ def split_data(root_path, num_splits=4):
     kf = KFold(n_splits=num_splits)
     n = 0
     for train_index, test_index in kf.split(mask_list):
-        with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w') as csvfile:
+        with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in train_index:
                 print('basename=%s'%([basename(mask_list[i])]))
                 writer.writerow([basename(mask_list[i])])
-        with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w') as csvfile:
+        with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in test_index:
                 writer.writerow([basename(mask_list[i])])
