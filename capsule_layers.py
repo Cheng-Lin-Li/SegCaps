@@ -49,7 +49,7 @@ class Mask(layers.Layer):
         self.resize_masks = resize_masks
 
     def call(self, inputs, **kwargs):
-        if type(inputs) is list:
+        if type(inputs) is list: # The true label is used to mask the output of capsule layer. For training
             assert len(inputs) == 2
             input, mask = inputs
             _, hei, wid, _, _ = input.get_shape()
@@ -61,7 +61,7 @@ class Mask(layers.Layer):
             else:
                 masked = mask * input
 
-        else:
+        else: # Mask using the capsule with maximal length. For prediction
             if inputs.get_shape().ndims == 3:
                 x = K.sqrt(K.sum(K.square(inputs), -1))
                 mask = K.one_hot(indices=K.argmax(x, 1), num_classes=x.get_shape().as_list()[1])
