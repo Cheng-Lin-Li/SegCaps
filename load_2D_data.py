@@ -22,7 +22,7 @@ from os import mkdir
 import csv
 import numpy as np
 from numpy.random import rand, shuffle
-import SimpleITK as sitk
+# import SimpleITK as sitk
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm #Progress bar
 from PIL import Image
@@ -89,20 +89,25 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             pass
 
     try:
-        itk_img = sitk.ReadImage(join(img_path, img_name))
-        img = sitk.GetArrayFromImage(itk_img)
+        # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
+#         itk_img = sitk.ReadImage(join(img_path, img_name))
+#         img = sitk.GetArrayFromImage(itk_img)
+        img = np.asarray(Image.open(join(img_path, img_name)))
+
         # The source image should be 512X512 resolution.
         img = image_resize2square(img, IMAGE_SIZE)
         # TODO computing by color image
 #         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
-        # Translate the image to grayscale
+        # Translate the image to grayscale by PILLOW package
         img = np.array(Image.fromarray(img).convert('L'))  
         img = img.reshape([img.shape[0], img.shape[1], 1])
         
 
         if not no_masks:
-            itk_mask = sitk.ReadImage(join(mask_path, img_name))
-            mask = sitk.GetArrayFromImage(itk_mask)
+            # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
+#             itk_mask = sitk.ReadImage(join(mask_path, img_name))
+#             mask = sitk.GetArrayFromImage(itk_mask)
+            mask = np.asarray(Image.open(join(mask_path, img_name)))
             mask = image_resize2square(mask, IMAGE_SIZE)
             
             mask = change_background_color(mask, COCO_BACKGROUND, MASK_BACKGROUND) 
@@ -347,4 +352,35 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
 
     if count != 0:
         yield (img_batch[:count,:,:,:])
-    
+ 
+@threadsafe_generator
+def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, subSampAmt=0,
+                          stride=1, downSampAmt=1):
+    # Create placeholders for testing
+    print('load_2D_data.generate_test_image')
+    img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
+    count = 0
+    test_img = np.asarray(test_img)
+    test_img = image_resize2square(test_img, net_input_shape[0])
+    # TODO computing by color image
+#         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
+    # Translate the image to grayscale by PILLOW package
+    test_img = np.array(Image.fromarray(test_img).convert('L'))  
+    test_img = img.reshape([test_img.shape[0], test_img.shape[1], 1])    
+
+    indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
+    for j in indicies:
+        if img_batch.ndim == 4:
+            img_batch[count, :, :, :] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
+        elif img_batch.ndim == 5:
+            # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
+            img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
+        else:
+            print('Error this function currently only supports 2D and 3D data.')
+            exit(0)
+
+        count += 1
+        if count % batchSize == 0:
+            count = 0
+            yield (img_batch)
+       
