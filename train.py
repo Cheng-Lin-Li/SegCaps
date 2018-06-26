@@ -12,6 +12,7 @@ Enhancement: Integrated with MS COCO dataset.
 
 from __future__ import print_function
 
+import logging
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -157,8 +158,7 @@ def train(args, train_list, val_list, u_model, net_input_shape):
 #         verbose=1)
 
 # POC testing
-    generate_train_batches = get_train_batches_generator(args.dataset)
-    generate_val_batches = get_val_batches_generator(args.dataset)
+    generate_train_batches, generate_val_batches, _ = get_generator(args.dataset)
     history = model.fit_generator(
         generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
