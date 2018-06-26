@@ -17,9 +17,9 @@ Enhancement:
 
 from __future__ import print_function
 
-import threading
+import logging
 from os.path import join, basename
-from os import mkdir
+from os import makedirs
 from glob import glob
 import csv
 from sklearn.model_selection import KFold
@@ -50,11 +50,11 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     mask_path = join(root_path, 'masks')
     fig_path = join(root_path, 'figs')
     try:
-        mkdir(numpy_path)
+        makedirs(numpy_path)
     except:
         pass
     try:
-        mkdir(fig_path)
+        makedirs(fig_path)
     except:
         pass
 
@@ -115,10 +115,10 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             plt.savefig(join(fig_path, fname + '.png'), format='png', bbox_inches='tight')
             plt.close(fig)
         except Exception as e:
-            print('\n'+'-'*100)
-            print('Error creating qualitative figure for {}'.format(fname))
-            print(e)
-            print('-'*100+'\n')
+            logging.error('\n'+'-'*100)
+            logging.error('Error creating qualitative figure for {}'.format(fname))
+            logging.error(e)
+            logging.error('-'*100+'\n')
 
         if not no_masks:
             np.savez_compressed(join(numpy_path, fname + '.npz'), img=img, mask=mask)
@@ -131,11 +131,11 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             return img
 
     except Exception as e:
-        print('\n'+'-'*100)
-        print('Unable to load img or masks for {}'.format(fname))
-        print(e)
-        print('Skipping file')
-        print('-'*100+'\n')
+        logging.error('\n'+'-'*100)
+        logging.error('Unable to load img or masks for {}'.format(fname))
+        logging.error(e)
+        logging.error('Skipping file')
+        logging.error('-'*100+'\n')
 
         return np.zeros(1), np.zeros(1)
 
@@ -156,17 +156,17 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
             try:
                 scan_name = scan_name[0]
                 path_to_np = join(root_path,'np_files',basename(scan_name)[:-3]+'npz')
-                print('=>path_to_np=%s'%(path_to_np))
+                logging.info('\npath_to_np=%s'%(path_to_np))
                 with np.load(path_to_np) as data:
                     train_img = data['img']
                     train_mask = data['mask']
             except:
-                print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
+                logging.info('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
                 train_img, train_mask = convert_data_to_numpy(root_path, scan_name)
                 if np.array_equal(train_img,np.zeros(1)):
                     continue
                 else:
-                    print('\nFinished making npz file.')
+                    logging.info('\nFinished making npz file.')
 
             if numSlices == 1:
                 subSampAmt = 0
@@ -189,7 +189,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
                     img_batch[count, :, :, :, 0] = train_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                     mask_batch[count, :, :, :, 0] = train_mask[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                 else:
-                    print('Error this function currently only supports 2D and 3D data.')
+                    logging.error('Error this function currently only supports 2D and 3D data.')
                     exit(0)
 
                 count += 1
@@ -240,12 +240,12 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
                     val_img = data['img']
                     val_mask = data['mask']
             except:
-                print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
+                logging.info('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
                 val_img, val_mask = convert_data_to_numpy(root_path, scan_name)
                 if np.array_equal(val_img,np.zeros(1)):
                     continue
                 else:
-                    print('\nFinished making npz file.')
+                    logging.info('\nFinished making npz file.')
 
             if numSlices == 1:
                 subSampAmt = 0
@@ -268,7 +268,7 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
                     img_batch[count, :, :, :, 0] = val_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                     mask_batch[count, :, :, :, 0] = val_mask[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                 else:
-                    print('Error this function currently only supports 2D and 3D data.')
+                    logging.error('Error this function currently only supports 2D and 3D data.')
                     exit(0)
 
                 count += 1
@@ -290,10 +290,10 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
 def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, numSlices=1, subSampAmt=0,
                           stride=1, downSampAmt=1):
     # Create placeholders for testing
-    print('load_3D_data.generate_test_batches')
+    logging.info('\nload_3D_data.generate_test_batches')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     count = 0
-    print('load_3D_data.generate_test_batches: test_list=%s'%(test_list))
+    logging.info('\nload_3D_data.generate_test_batches: test_list=%s'%(test_list))
     for i, scan_name in enumerate(test_list):
         try:
             scan_name = scan_name[0]
@@ -301,12 +301,12 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
             with np.load(path_to_np) as data:
                 test_img = data['img']
         except:
-            print('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
+            logging.info('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
             test_img = convert_data_to_numpy(root_path, scan_name, no_masks=True)
             if np.array_equal(test_img,np.zeros(1)):
                 continue
             else:
-                print('\nFinished making npz file.')
+                logging.info('\nFinished making npz file.')
 
         if numSlices == 1:
             subSampAmt = 0
@@ -322,7 +322,7 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
                 # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
                 img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
             else:
-                print('Error this function currently only supports 2D and 3D data.')
+                logging.error('Error this function currently only supports 2D and 3D data.')
                 exit(0)
 
             count += 1
