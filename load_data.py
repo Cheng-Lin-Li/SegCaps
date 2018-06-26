@@ -17,9 +17,10 @@ Enhancement:
 
 from __future__ import print_function
 
-# import threading
+import logging
+import threading
 from os.path import join, basename
-from os import mkdir
+from os import makedirs
 from glob import glob
 import csv
 from sklearn.model_selection import KFold
@@ -139,12 +140,12 @@ def load_class_weights(root, split):
     try:
         return np.load(class_weight_filename)
     except:
-        print('Class weight file {} not found.\nComputing class weights now. This may take '
+        logging.warning('Class weight file {} not found.\nComputing class weights now. This may take '
               'some time.'.format(class_weight_filename))
         train_data_list, _, _ = load_data(root, str(split))
         value = compute_class_weights(root, train_data_list)
         np.save(class_weight_filename,value)
-        print('Finished computing class weights. This value has been saved for this training split.')
+        logging.warning('Finished computing class weights. This value has been saved for this training split.')
         return value
 
 
@@ -157,7 +158,7 @@ def split_data(root_path, num_splits=4):
 
     outdir = join(root_path,'split_lists')
     try:
-        mkdir(outdir)
+        makedirs(outdir)
     except:
         pass
 
