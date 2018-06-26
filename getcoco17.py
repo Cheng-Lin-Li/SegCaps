@@ -40,39 +40,72 @@ FILE_MIDDLE_NAME = 'train'
 IMAGE_FOLDER = 'imgs'
 MASK_FOLDER = 'masks'
 RESOLUTION = 512 # Resolution of the input for the model.
+BACKGROUND_COLOR = tuple(0, 0, 0) # Black background color for padding areas
 
 def image_resize2square(image, desired_size = None):
-    # initialize the dimensions of the image to be resized and
-    # grab the image size
+    '''
+    Resize image to a square by specific resolution(desired_size).
+    '''
+    assert (image is None), 'Image cannot be None.'
+
+    # Initialize the dimensions of the image to be resized and
+    # grab the size of image
     dim = None
     old_size = image.shape[:2]
 
     # if both the width and height are None, then return the
     # original image
-    if desired_size is None:
+    if desired_size is None or desired_size == 0:
         return image
 
-    # calculate the ratio of the height and construct the
+    # calculate the ratio of the height and construct theima
     # dimensions
-    ratio = float(desired_size)/max(old_size)
-    new_size = tuple([int(x*ratio) for x in old_size])
+    ratio = float(desired_size) / max(old_size)
+    new_size = tuple([int(x * ratio) for x in old_size])
 
     # new_size should be in (width, height) format
     resized = cv2.resize(image, (new_size[1], new_size[0]))
 
     delta_w = desired_size - new_size[1]
     delta_h = desired_size - new_size[0]
-    top, bottom = delta_h//2, delta_h-(delta_h//2)
-    left, right = delta_w//2, delta_w-(delta_w//2)
-
-    color = [0, 0, 0]
-    new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+    left, right = delta_w // 2, delta_w - (delta_w // 2)
+    
+    # Assign background color for padding areas. Default is Black.
+    bg_color = BACKGROUND_COLOR
+    new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value = bg_color)
 
     # return the resized image
     return new_image
-
+def create_path(data_dir):
+    '''
+    Create a specific path to store result images.
+    - Under the data directory, two separated folders will store image and masking files
+    - Example:
+    - data_dir-
+            |- IMAGE_FOLDER
+            |- MASK_FOLDER
+    
+    '''
+    try:
+        output_image_path = join(data_dir, IMAGE_FOLDER)
+        if not os.path.isdir(output_image_path):
+            os.makedirs(output_image_path) 
+        output_mask_path = join(data_dir, MASK_FOLDER) 
+        if not os.path.isdir(output_mask_path):
+            os.makedirs(output_mask_path)  
+        return True
+    except Exception as e:
+        logging.error('\nCreate folders error! Message: %s'%(str(e)))
+        exit(0)
+        
+            
 def main(args):
-#     pylab.rcParams['figure.figsize'] = (8.0, 10.0)
+    '''
+     The main entry point of the program
+     - This program will download image from MS COCO 2017 (Microsoft Common Objects in Context) repo 
+         and generate annotation to the specific object classes.
+    '''
     plt.ioff()
     
     data_dir = args.data_root_dir
@@ -82,14 +115,9 @@ def main(args):
     file_name = ''
  
     #Create path for output
-    output_image_path = join(data_dir, IMAGE_FOLDER)
-    if not os.path.isdir(output_image_path):
-        os.makedirs (output_image_path) 
-    output_mask_path = join(data_dir, MASK_FOLDER) 
-    if not os.path.isdir(output_mask_path):
-        os.makedirs (output_mask_path)    
+    create_path(data_dir)
  
-    # initialize COCO api for instance annotations
+    # initialize COCO API for instance annotations
     coco=COCO(annFile)
      
     # get all images containing given categories, select one at random
@@ -122,7 +150,7 @@ def main(args):
         for j in range(len(anns)):
             mask += coco.annToMask(anns[j])
          
-        # Background color = (R,G,B)=[68, 1, 84]
+        # Background color = (R,G,B)=[68, 1, 84] for MS COCO 2017
         # save the mask image
         mask = image_resize2square(mask, args.resolution)
         file_name = join(output_mask_path, FILE_MIDDLE_NAME+str(i)+'.png')
@@ -135,7 +163,7 @@ if __name__ == '__main__':
     '''
     Main program for MS COCO 2017 annotation mask images generation.
     Example command:
-    $python getcoco17 --data_root_dir ./data --category person dog --annotation_dir './annotations/instances_val2017.json --number 10'
+    $python3 getcoco17 --data_root_dir ./data --category person dog --annotation_dir './annotations/instances_val2017.json --number 10'
     '''
     
     parser = argparse.ArgumentParser(description='Download COCO 2017 image Data')
