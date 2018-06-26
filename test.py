@@ -40,7 +40,7 @@ def threshold_mask(raw_output, threshold):
         except:
             threshold = 0.5
 
-    print('\tThreshold: {}'.format(threshold))
+    logging.info('\tThreshold: {}'.format(threshold))
 
     raw_output[raw_output > threshold] = 1
     raw_output[raw_output < 1] = 0
@@ -92,10 +92,10 @@ def test(args, test_list, model_list, net_input_shape):
     else:
         eval_model = model_list[0]
     try:
-        print('Weights_path=%s'%(weights_path))
+        logging.info('Weights_path=%s'%(weights_path))
         eval_model.load_weights(weights_path)
     except:
-        print('Unable to find weights path. Testing with random weights.')
+        logging.warning('Unable to find weights path. Testing with random weights.')
     print_summary(model=eval_model, positions=[.38, .65, .75, 1.])
 
     # Set up placeholders
@@ -111,7 +111,7 @@ def test(args, test_list, model_list, net_input_shape):
         outfile += 'assd_'
 
     # Testing the network
-    print('Testing... This will take some time...')
+    logging.info('Testing... This will take some time...')
 
     with open(join(output_dir, args.save_prefix + outfile + 'scores.csv'), 'w') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -134,8 +134,8 @@ def test(args, test_list, model_list, net_input_shape):
                 num_slices = img_data.shape[0]
             else: # For MS COCO 2017 dataset
                 num_slices = 1 # Treat RGB as three slices.
-            print('test.test: eval_model.predict_generator')
-            generate_test_batches = get_test_batches_generator(args.dataset)
+            logging.info('test.test: eval_model.predict_generator')
+            _, _, generate_test_batches = get_generator(args.dataset)
             output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
                                                                               net_input_shape,
                                                                               batchSize=args.batch_size,
@@ -144,7 +144,7 @@ def test(args, test_list, model_list, net_input_shape):
                                                                               stride=1),
                                                         steps=num_slices, max_queue_size=1, workers=1,
                                                         use_multiprocessing=False, verbose=1)
-            print('test.test: output_array=%s'%(output_array))
+            logging.info('test.test: output_array=%s'%(output_array))
             if args.net.find('caps') != -1:
                 output = output_array[0][:,:,:,0] # A list with two images, get first one image.
                 #recon = output_array[1][:,:,:,0]
@@ -156,14 +156,14 @@ def test(args, test_list, model_list, net_input_shape):
             # otherwise it will be treaded as a 3D image
             if (args.dataset == 'luna16'):
                 output_img = sitk.GetImageFromArray(output)
-                print('Segmenting Output')
+                logging.info('Segmenting Output')
                 output_bin = threshold_mask(output, args.thresh_level)
                 output_mask = sitk.GetImageFromArray(output_bin)   
 
                 output_img.CopyInformation(sitk_img)            
                 output_mask.CopyInformation(sitk_img)       
                     
-                print('Saving Output')
+                logging.info('Saving Output')
                 sitk.WriteImage(output_img, join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]))
                 sitk.WriteImage(output_mask, join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]))
                                                   
@@ -171,11 +171,11 @@ def test(args, test_list, model_list, net_input_shape):
                 # output.shape = (1, 512, 512)
                 # output[0,:,:] = (512, 512)
                 output_img = sitk.GetImageFromArray(output[0,:,:], isVector=True)
-                print('Segmenting Output')
+                logging.info('Segmenting Output')
                 output_bin = threshold_mask(output, args.thresh_level)
                 output_mask = sitk.GetImageFromArray(output_bin[0,:,:], isVector=True)
 
-                print('Saving Output')                
+                logging.info('Saving Output')                
                 plt.imsave(join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]), output_img)
                 plt.imsave(join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]), output_mask)
     
@@ -184,7 +184,7 @@ def test(args, test_list, model_list, net_input_shape):
             gt_data = sitk.GetArrayFromImage(sitk_mask)
                 
             # Plot Qual Figure
-            print('Creating Qualitative Figure for Quick Reference')
+            logging.info('Creating Qualitative Figure for Quick Reference')
             f, ax = plt.subplots(1, 3, figsize=(15, 5))
 
             ax[0].imshow(img_data[img_data.shape[0] // 3, :, :], alpha=1, cmap='gray')
@@ -217,19 +217,19 @@ def test(args, test_list, model_list, net_input_shape):
 
             row = [img[0][:-4]]
             if args.compute_dice:
-                print('Computing Dice')
+                logging.info('Computing Dice')
                 dice_arr[i] = dc(output_bin, gt_data)
-                print('\tDice: {}'.format(dice_arr[i]))
+                logging.info('\tDice: {}'.format(dice_arr[i]))
                 row.append(dice_arr[i])
             if args.compute_jaccard:
-                print('Computing Jaccard')
+                logging.info('Computing Jaccard')
                 jacc_arr[i] = jc(output_bin, gt_data)
-                print('\tJaccard: {}'.format(jacc_arr[i]))
+                logging.info('\tJaccard: {}'.format(jacc_arr[i]))
                 row.append(jacc_arr[i])
             if args.compute_assd:
-                print('Computing ASSD')
+                logging.info('Computing ASSD')
                 assd_arr[i] = assd(output_bin, gt_data, voxelspacing=sitk_img.GetSpacing(), connectivity=1)
-                print('\tASSD: {}'.format(assd_arr[i]))
+                logging.info('\tASSD: {}'.format(assd_arr[i]))
                 row.append(assd_arr[i])
 
             writer.writerow(row)
