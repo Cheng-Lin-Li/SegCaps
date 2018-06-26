@@ -12,7 +12,10 @@ Please see the README for detailed instructions for this project.
 from __future__ import print_function
 
 RESOLUTION = 512 # Resolution of the input for the model.
+LOGGING_FORMAT = '%(levelname)s %(asctime)s: %(message)s'
 
+import logging, sys
+import logging.handlers
 from os.path import join
 from os import makedirs
 from os import environ
@@ -35,12 +38,12 @@ def main(args):
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
     except:
         # Create the training and test splits if not found
-        print('No existing training, validate, test files...System will generate it.')
+        logging.info('No existing training, validate, test files...System will generate it.')
         split_data(args.data_root_dir, num_splits=4)
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
 
     # Get image properties from first image. Assume they are all the same.
-    print('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
+    logging.info('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
     # Get image shape from the first image.
     image = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0])))
     img_shape = image.shape #(500,500,4)    
@@ -104,82 +107,102 @@ def main(args):
         # Run manipulation of segcaps
         manip(args, test_list, model_list, net_input_shape)
 
+def loglevel(level=0):
+    assert isinstance(level, int)
+    try:
+        return [
+            # logging.CRITICAL,
+            # logging.ERROR,
+            logging.WARNING, # default
+            logging.INFO,
+            logging.DEBUG,
+            logging.NOTSET,
+            ][level]
+    except LookupError:
+        return logging.NOTSET        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train on Medical Data')
-    parser.add_argument('--data_root_dir', type=str, required=True,
-                        help='The root directory for your data.')
-    parser.add_argument('--weights_path', type=str, default='',
-                        help='/path/to/trained_model.hdf5 from root. Set to "" for none.')
-    parser.add_argument('--split_num', type=int, default=0,
-                        help='Which training split to train/test on.')
-    parser.add_argument('--net', type=str.lower, default='segcapsr3',
-                        choices=['segcapsr3', 'segcapsr1', 'segcapsbasic', 'unet', 'tiramisu'],
-                        help='Choose your network.')
-    parser.add_argument('--train', type=int, default=1, choices=[0,1],
-                        help='Set to 1 to enable training.')
-    parser.add_argument('--test', type=int, default=1, choices=[0,1],
-                        help='Set to 1 to enable testing.')
-    parser.add_argument('--manip', type=int, default=1, choices=[0,1],
-                        help='Set to 1 to enable manipulation.')
-    parser.add_argument('--shuffle_data', type=int, default=1, choices=[0,1],
-                        help='Whether or not to shuffle the training data (both per epoch and in slice order.')
-    parser.add_argument('--aug_data', type=int, default=1, choices=[0,1],
-                        help='Whether or not to use data augmentation during training.')
-    parser.add_argument('--loss', type=str.lower, default='w_bce', choices=['bce', 'w_bce', 'dice', 'mar', 'w_mar'],
-                        help='Which loss to use. "bce" and "w_bce": unweighted and weighted binary cross entropy'
+    parser.add_argument('--data_root_dir', type = str, required = True,
+                        help = 'The root directory for your data.')
+    parser.add_argument('--weights_path', type = str, default = '',
+                        help = '/path/to/trained_model.hdf5 from root. Set to "" for none.')
+    parser.add_argument('--split_num', type = int, default = 0,
+                        help = 'Which training split to train/test on.')
+    parser.add_argument('--net', type = str.lower, default = 'segcapsr3',
+                        choices = ['segcapsr3', 'segcapsr1', 'segcapsbasic', 'unet', 'tiramisu'],
+                        help = 'Choose your network.')
+    parser.add_argument('--train', type = int, default = 1, choices = [0,1],
+                        help = 'Set to 1 to enable training.')
+    parser.add_argument('--test', type = int, default = 1, choices = [0,1],
+                        help = 'Set to 1 to enable testing.')
+    parser.add_argument('--manip', type = int, default = 1, choices = [0,1],
+                        help = 'Set to 1 to enable manipulation.')
+    parser.add_argument('--shuffle_data', type = int, default = 1, choices = [0,1],
+                        help = 'Whether or not to shuffle the training data (both per epoch and in slice order.')
+    parser.add_argument('--aug_data', type = int, default = 1, choices = [0,1],
+                        help = 'Whether or not to use data augmentation during training.')
+    parser.add_argument('--loss', type = str.lower, default = 'w_bce', choices = ['bce', 'w_bce', 'dice', 'mar', 'w_mar'],
+                        help = 'Which loss to use. "bce" and "w_bce": unweighted and weighted binary cross entropy'
                              '"dice": soft dice coefficient, "mar" and "w_mar": unweighted and weighted margin loss.')
     # TODO: multiclass segmentation.
     #   # Calculate distance from actual labels using cross entropy
     # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label_reshaped[:])
     #   #Take mean for total loss
     # loss_op = tf.reduce_mean(cross_entropy, name="fcn_loss")    
-    parser.add_argument('--batch_size', type=int, default=1,
-                        help='Batch size for training/testing.')
-    parser.add_argument('--initial_lr', type=float, default=0.0001,
-                        help='Initial learning rate for Adam.')
-    parser.add_argument('--recon_wei', type=float, default=131.072,
-                        help="If using capsnet: The coefficient (weighting) for the loss of decoder")
-    parser.add_argument('--slices', type=int, default=1,
-                        help='Number of slices to include for training/testing.')
-    parser.add_argument('--subsamp', type=int, default=-1,
-                        help='Number of slices to skip when forming 3D samples for training. Enter -1 for random '
+    parser.add_argument('--batch_size', type = int, default = 1,
+                        help = 'Batch size for training/testing.')
+    parser.add_argument('--initial_lr', type = float, default = 0.0001,
+                        help = 'Initial learning rate for Adam.')
+    parser.add_argument('--recon_wei', type = float, default = 131.072,
+                        help = "If using capsnet: The coefficient (weighting) for the loss of decoder")
+    parser.add_argument('--slices', type = int, default = 1,
+                        help = 'Number of slices to include for training/testing.')
+    parser.add_argument('--subsamp', type = int, default = -1,
+                        help = 'Number of slices to skip when forming 3D samples for training. Enter -1 for random '
                              'subsampling up to 5% of total slices.')
-    parser.add_argument('--stride', type=int, default=1,
-                        help='Number of slices to move when generating the next sample.')
-    parser.add_argument('--verbose', type=int, default=1, choices=[0, 1, 2],
-                        help='Set the verbose value for training. 0: Silent, 1: per iteration, 2: per epoch.')
-    parser.add_argument('--save_raw', type=int, default=1, choices=[0,1],
-                        help='Enter 0 to not save, 1 to save.')
-    parser.add_argument('--save_seg', type=int, default=1, choices=[0,1],
-                        help='Enter 0 to not save, 1 to save.')
-    parser.add_argument('--save_prefix', type=str, default='',
-                        help='Prefix to append to saved CSV.')
-    parser.add_argument('--thresh_level', type=float, default=0.,
-                        help='Enter 0.0 for otsu thresholding, else set value')
-    parser.add_argument('--compute_dice', type=int, default=1,
-                        help='0 or 1')
-    parser.add_argument('--compute_jaccard', type=int, default=1,
-                        help='0 or 1')
-    parser.add_argument('--compute_assd', type=int, default=0,
-                        help='0 or 1')
-    parser.add_argument('--which_gpus', type=str, default="0",
+    parser.add_argument('--stride', type = int, default = 1,
+                        help = 'Number of slices to move when generating the next sample.')
+    parser.add_argument('--verbose', type = int, default = 1, choices = [0, 1, 2],
+                        help = 'Set the verbose value for training. 0: Silent, 1: per iteration, 2: per epoch.')
+    parser.add_argument('--save_raw', type = int, default = 1, choices = [0,1],
+                        help = 'Enter 0 to not save, 1 to save.')
+    parser.add_argument('--save_seg', type = int, default = 1, choices = [0,1],
+                        help = 'Enter 0 to not save, 1 to save.')
+    parser.add_argument('--save_prefix', type = str, default = '',
+                        help = 'Prefix to append to saved CSV.')
+    parser.add_argument('--thresh_level', type = float, default = 0.,
+                        help = 'Enter 0.0 for otsu thresholding, else set value')
+    parser.add_argument('--compute_dice', type = int, default = 1,
+                        help = '0 or 1')
+    parser.add_argument('--compute_jaccard', type = int, default = 1,
+                        help = '0 or 1')
+    parser.add_argument('--compute_assd', type = int, default = 0,
+                        help = '0 or 1')
+    parser.add_argument('--which_gpus', type = str, default = '0',
                         help='Enter "-2" for CPU only, "-1" for all GPUs available, '
                              'or a comma separated list of GPU id numbers ex: "0,1,4".')
-    parser.add_argument('--gpus', type=int, default=-1,
-                        help='Number of GPUs you have available for training. '
+    parser.add_argument('--gpus', type = int, default = -1,
+                        help = 'Number of GPUs you have available for training. '
                              'If entering specific GPU ids under the --which_gpus arg or if using CPU, '
                              'then this number will be inferred, else this argument must be included.')
     # Enhancements: 
     # TODO: implement softmax entroyp loss function for multiclass segmentation
-    parser.add_argument('--dataset', type=str, default='mscoco17', choices=['luna16', 'mscoco17'],
-                        help='Enter "mscoco17" for COCO dataset, "luna16" for CT images')
-    parser.add_argument('--num_class', type=int, default=2, 
-                        help='Number of classes to segment. Default is 2. If number of classes > 2, '
-                            ' the loss function will be softmax entropy and only apply on SegCapsR3') 
+    parser.add_argument('--dataset', type = str.lower, default = 'mscoco17', choices = ['luna16', 'mscoco17'],
+                        help = 'Enter "mscoco17" for COCO dataset, "luna16" for CT images')
+    parser.add_argument('--num_class', type = int, default = 2, 
+                        help = 'Number of classes to segment. Default is 2. If number of classes > 2, '
+                            ' the loss function will be softmax entropy and only apply on SegCapsR3'
+                            '** Current version only support binary classification tasks.') 
+    parser.add_argument('--loglevel', type = int, default = 4, help = 'loglevel 3 = debug, 2 = info, 1 = warning, '
+                            ' 4 = error, > 4 =critical') 
     arguments = parser.parse_args()
 
-    #
+    # assuming loglevel is bound to the string value obtained from the
+    # command line argument. Convert to upper case to allow the user to
+    # specify --log=DEBUG or --log=debug
+    logging.basicConfig(format=LOGGING_FORMAT, level=loglevel(arguments.loglevel), stream=sys.stderr)
+
     if arguments.which_gpus == -2:
         environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         environ["CUDA_VISIBLE_DEVICES"] = ""
