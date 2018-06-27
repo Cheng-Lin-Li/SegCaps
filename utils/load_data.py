@@ -25,11 +25,10 @@ from glob import glob
 import csv
 from sklearn.model_selection import KFold
 import numpy as np
-from numpy.random import rand, shuffle
+# from numpy.random import rand, shuffle
 import SimpleITK as sitk
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm #Progress bar
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -37,10 +36,11 @@ import cv2
 
 plt.ioff()
 
-from keras.preprocessing.image import *
+from keras.preprocessing.image import random_rotation, random_shift, random_shear, random_zoom
 
-from custom_data_aug import elastic_transform, salt_pepper_noise
+from utils.custom_data_aug import elastic_transform, salt_pepper_noise
 
+MASK_BACKGROUND = (0,0,0,0)    
 debug = 0
 
 ''' Make the generators threadsafe in case of multiple threads '''
@@ -69,9 +69,13 @@ def threadsafe_generator(f):
 
 
 def image_resize2square(image, desired_size = None):
-    # initialize the dimensions of the image to be resized and
+    '''
+    Transform image to a square image with desired size(resolution)
+    Padding image with black color which defined as MASK_BACKGROUND
+    '''
+    
+    # initialize dimensions of the image to be resized and
     # grab the image size
-    dim = None
     old_size = image.shape[:2]
 
     # if both the width and height are None, then return the
@@ -89,11 +93,10 @@ def image_resize2square(image, desired_size = None):
 
     delta_w = desired_size - new_size[1]
     delta_h = desired_size - new_size[0]
-    top, bottom = delta_h//2, delta_h-(delta_h//2)
-    left, right = delta_w//2, delta_w-(delta_w//2)
+    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+    left, right = delta_w // 2, delta_w - (delta_w // 2)
 
-    color = [0, 0, 0]
-    new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+    new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value = MASK_BACKGROUND)
 
     # return the resized image
     return new_image
@@ -108,7 +111,7 @@ def load_data(root, split):
         reader = csv.reader(f)
         testing_list = list(reader)
 
-    new_training_list, validation_list = train_test_split(training_list, test_size=0.1, random_state=7)
+    new_training_list, validation_list = train_test_split(training_list, test_size = 0.1, random_state = 7)
 
     return new_training_list, validation_list, testing_list
 

@@ -16,38 +16,26 @@ Enhancement:
 '''
 
 from __future__ import print_function
-
+# import threading
 import logging
 from os.path import join, basename
 from os import makedirs
-import csv
+# import csv
 import numpy as np
 from numpy.random import rand, shuffle
-import SimpleITK as sitk
-from sklearn.model_selection import train_test_split
-from tqdm import tqdm #Progress bar
+# import SimpleITK as sitk
+# from sklearn.model_selection import train_test_split
+# from tqdm import tqdm #Progress bar
 from PIL import Image
 
-import matplotlib
+# import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import cv2
+# import cv2
 
 plt.ioff()
-import threading
-from load_data import augmentImages, threadsafe_generator, image_resize2square
 
-# 
-# def flip_axis(x, axis):
-#     x = np.asarray(x).# 
-# def flip_axis(x, axis):
-#     x = np.asarray(x).swapaxes(axis, 0)
-#     x = x[::-1, ...]
-#     x = x.swapaxes(0, axis)IMAGE_SIZE = 512IMAGE_SIZE = 512
-#     return xswapaxes(axis, 0)
-#     x = x[::-1, ...]
-#     x = x.swapaxes(0, axis)
-#     return x
+from utils.load_data import augmentImages, threadsafe_generator, image_resize2square
 
 debug = 0
 IMAGE_SIZE = 512
@@ -67,6 +55,18 @@ def change_background_color(img, original_color, new_color):
     mask = (red == r1) & (green == g1) & (blue == b1) & (alpha == a1)
     img[:,:,:4][mask] = [r2, g2, b2, a2]
     return img
+
+def image_enhance(image, num):
+    '''
+    Input image is a numpy array with unit8 grayscale.
+    This function will enhance the bright by adding num to each pixel. 
+    '''
+    for i in range(num):
+        image += 1
+        # If pixel value == 0 which means the value = 256 but overflow to 0
+        # shift the overflow pix values to 255. 
+        image[image == 0] = 255 
+    return image
 
 def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     fname = img_name[:-4]
@@ -90,27 +90,20 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
         except:
             pass
 
-    try:
-        # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
-#         itk_img = sitk.ReadImage(join(img_path, img_name))
-#         img = sitk.GetArrayFromImage(itk_img)
-        
+    try:       
         img = np.array(Image.open(join(img_path, img_name)))
 
-        # The source image should be 512X512 resolution.
-        img = image_resize2square(img, IMAGE_SIZE)
         # TODO computing by color image
-#         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
         # Translate the image to grayscale by PILLOW package
         img = np.array(Image.fromarray(img).convert('L'))  
+        # Add 5 for each pix on the grayscale image.
+        img = image_enhance(img, 5)
+        # The source image should be 512X512 resolution.
+        img = image_resize2square(img, IMAGE_SIZE)        
         img = img.reshape([img.shape[0], img.shape[1], 1])
         
-
         if not no_masks:
             # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
-#             itk_mask = sitk.ReadImage(join(mask_path, img_name))
-#             mask = sitk.GetArrayFromImage(itk_mask)
-
             mask = np.array(Image.open(join(mask_path, img_name)))
             
             mask = image_resize2square(mask, IMAGE_SIZE)
@@ -142,12 +135,6 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
         print('-'*100+'\n')
 
         return np.zeros(1), np.zeros(1)
-# 
-# def flip_axis(x, axis):
-#     x = np.asarray(x).swapaxes(axis, 0)
-#     x = x[::-1, ...]
-#     x = x.swapaxes(0, axis)
-#     return x
 
 
 def get_slice(image_data):
@@ -168,6 +155,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
         count = 0
         for i, scan_name in enumerate(train_list):
             try:
+                # Read image file from pre-processing image numpy format compression files.
                 scan_name = scan_name[0]
                 path_to_np = join(root_path,'np_files',basename(scan_name)[:-3]+'npz')
                 logging.info('\npath_to_np=%s'%(path_to_np))
@@ -349,7 +337,7 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
 #         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
     # Translate the image to grayscale by PILLOW package
     test_img = np.array(Image.fromarray(test_img).convert('L'))  
-    test_img = img.reshape([test_img.shape[0], test_img.shape[1], 1])    
+    test_img = test_img.reshape([test_img.shape[0], test_img.shape[1], 1])    
 
     indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
     for j in indicies:

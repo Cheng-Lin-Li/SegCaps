@@ -10,6 +10,7 @@ This file is used for testing models. Please see the README for details about te
 
 from __future__ import print_function
 
+import logging
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -19,21 +20,21 @@ from os.path import join
 from os import makedirs
 import csv
 import SimpleITK as sitk
-from tqdm import tqdm
+# from tqdm import tqdm
 import numpy as np
 import scipy.ndimage.morphology
 from skimage import measure, filters
-from metrics import dc, jc, assd
-
+from utils.metrics import dc, jc, assd
+from PIL import Image
 from keras import backend as K
 K.set_image_data_format('channels_last')
 from keras.utils import print_summary
-
-from data_helper import *
+from utils.data_helper import get_generator
+from utils.load_2D_data import image_enhance, image_resize2square
 
 IMAGE_SIZE = 512
 
-def threshold_mask(raw_output, threshold):
+def threshold_mask(raw_output, threshold): #raw_output 3d:(119, 512, 512)
     if threshold == 0:
         try:
             threshold = filters.threshold_otsu(raw_output)
@@ -45,20 +46,24 @@ def threshold_mask(raw_output, threshold):
     raw_output[raw_output > threshold] = 1
     raw_output[raw_output < 1] = 0
 
+    #all_labels 3d:(119, 512, 512)
     all_labels = measure.label(raw_output)
-    props = measure.regionprops(all_labels)
+    # props 3d: region of props=>list(_RegionProperties:<skimage.measure._regionprops._RegionProperties object>) 
+    # with bbox. 
+    props = measure.regionprops(all_labels) 
     props.sort(key=lambda x: x.area, reverse=True)
     thresholded_mask = np.zeros(raw_output.shape)
 
     if len(props) >= 2:
-        if props[0].area / props[1].area > 5:  # if the largest is way larger than the second largest
+        # if the largest is way larger than the second largest
+        if props[0].area / props[1].area > 5:  
             thresholded_mask[all_labels == props[0].label] = 1  # only turn on the largest component
         else:
             thresholded_mask[all_labels == props[0].label] = 1  # turn on two largest components
             thresholded_mask[all_labels == props[1].label] = 1
     elif len(props):
         thresholded_mask[all_labels == props[0].label] = 1
-
+    # threshold_mask: 3d=(119, 512, 512)
     thresholded_mask = scipy.ndimage.morphology.binary_fill_holes(thresholded_mask).astype(np.uint8)
 
     return thresholded_mask
@@ -128,12 +133,18 @@ def test(args, test_list, model_list, net_input_shape):
 
         for i, img in enumerate((test_list)):
             sitk_img = sitk.ReadImage(join(args.data_root_dir, 'imgs', img[0]))
-            img_data = sitk.GetArrayFromImage(sitk_img)
-            # TODO: Change RGB to single slice of grayscale image.
-            if args.dataset == 'luna16':
-                num_slices = img_data.shape[0]
-            else: # For MS COCO 2017 dataset
-                num_slices = 1 # Treat RGB as three slices.
+            img_data = sitk.GetArrayFromImage(sitk_img) # 3d:(slices, 512, 512), 2d:(512, 512, channels=4)
+            
+            # Change RGB to single slice of grayscale image for MS COCO 17 dataset.
+            if args.dataset == 'mscoco17':
+                # Reshape img_data from (512, 512) to (1, 512, 512)
+                img_data = np.array(Image.fromarray(img_data).convert('L'))  
+                # Add 5 for each pix on the grayscale image.
+                img_data = image_enhance(img_data, 5)
+                img_data = image_resize2square(img_data, IMAGE_SIZE)
+                img_data = np.reshape(img_data, (1, img_data.shape[0], img_data.shape[1]))
+
+            num_slices = img_data.shape[0]                
             logging.info('test.test: eval_model.predict_generator')
             _, _, generate_test_batches = get_generator(args.dataset)
             output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
@@ -146,45 +157,48 @@ def test(args, test_list, model_list, net_input_shape):
                                                         use_multiprocessing=False, verbose=1)
             logging.info('test.test: output_array=%s'%(output_array))
             if args.net.find('caps') != -1:
-                output = output_array[0][:,:,:,0] # A list with two images, get first one image.
+                # A list with two images [mask, recon], get mask image.#3d:
+                # output_array=[mask(Slices, x=512, y=512, 1), recon(slices, x=512, y=512, 1)]
+                output = output_array[0][:,:,:,0] # output = (slices, 512, 512)
                 #recon = output_array[1][:,:,:,0]
             else:
                 output = output_array[:,:,:,0]
 
-            # Get a SimpleITK Image from a numpy array. 
-            # If isVector is True, then a 3D array will be treaded as a 2D vector image, 
-            # otherwise it will be treaded as a 3D image
-            if (args.dataset == 'luna16'):
-                output_img = sitk.GetImageFromArray(output)
-                logging.info('Segmenting Output')
-                output_bin = threshold_mask(output, args.thresh_level)
-                output_mask = sitk.GetImageFromArray(output_bin)   
-
-                output_img.CopyInformation(sitk_img)            
-                output_mask.CopyInformation(sitk_img)       
-                    
-                logging.info('Saving Output')
+            #output_image = RTTI size:[512, 512, 119]
+            output_img = sitk.GetImageFromArray(output)
+            print('Segmenting Output')
+            # output_bin (119, 512, 512)
+            output_bin = threshold_mask(output, args.thresh_level)
+            # output_mask = RIIT (512, 512, 119)
+            output_mask = sitk.GetImageFromArray(output_bin)
+            if args.dataset == 'luna16':
+                output_img.CopyInformation(sitk_img)
+                output_mask.CopyInformation(sitk_img)
+    
+                print('Saving Output')
                 sitk.WriteImage(output_img, join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]))
                 sitk.WriteImage(output_mask, join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]))
-                                                  
-            else: # 2D image
-                # output.shape = (1, 512, 512)
-                # output[0,:,:] = (512, 512)
-                output_img = sitk.GetImageFromArray(output[0,:,:], isVector=True)
-                logging.info('Segmenting Output')
-                output_bin = threshold_mask(output, args.thresh_level)
-                output_mask = sitk.GetImageFromArray(output_bin[0,:,:], isVector=True)
-
-                logging.info('Saving Output')                
-                plt.imsave(join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]), output_img)
-                plt.imsave(join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]), output_mask)
-    
-            # Load gt mask
-            sitk_mask = sitk.ReadImage(join(args.data_root_dir, 'masks', img[0]))
-            gt_data = sitk.GetArrayFromImage(sitk_mask)
+            else: # MS COCO 17
+                plt.imshow(output[0,:,:], cmap = 'gray')
+                plt.imsave(join(raw_out_dir, img[0][:-4] + '_raw_output' + img[0][-4:]), output[0,:,:])
+                plt.imshow(output_bin[0,:,:], cmap = 'gray')
+                plt.imsave(join(fin_out_dir, img[0][:-4] + '_final_output' + img[0][-4:]), output_bin[0,:,:])
                 
+            # Load gt mask
+            # sitk_mask: 3d RTTI(512, 512, slices)
+            sitk_mask = sitk.ReadImage(join(args.data_root_dir, 'masks', img[0]))
+            # gt_data: 3d=(slices, 512, 512)
+            gt_data = sitk.GetArrayFromImage(sitk_mask)
+            
+            # Change RGB to single slice of grayscale image for MS COCO 17 dataset.
+            if args.dataset == 'mscoco17':
+                # Reshape img_data from (512, 512) to (1, 512, 512)
+                gt_data = np.array(Image.fromarray(gt_data).convert('L'))  
+                gt_data = image_resize2square(gt_data, IMAGE_SIZE)
+                gt_data = np.reshape(gt_data, (1, gt_data.shape[0], gt_data.shape[1]))
+
             # Plot Qual Figure
-            logging.info('Creating Qualitative Figure for Quick Reference')
+            print('Creating Qualitative Figure for Quick Reference')
             f, ax = plt.subplots(1, 3, figsize=(15, 5))
 
             ax[0].imshow(img_data[img_data.shape[0] // 3, :, :], alpha=1, cmap='gray')
@@ -213,8 +227,9 @@ def test(args, test_list, model_list, net_input_shape):
 
             plt.savefig(join(fig_out_dir, img[0][:-4] + '_qual_fig' + '.png'),
                         format='png', bbox_inches='tight')
-            plt.close('all')
+            plt.close('all')   
 
+            # Compute metrics
             row = [img[0][:-4]]
             if args.compute_dice:
                 logging.info('Computing Dice')

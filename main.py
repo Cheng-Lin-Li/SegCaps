@@ -14,8 +14,7 @@ from __future__ import print_function
 RESOLUTION = 512 # Resolution of the input for the model.
 LOGGING_FORMAT = '%(levelname)s %(asctime)s: %(message)s'
 
-import logging, sys
-import logging.handlers
+import sys, logging
 from os.path import join
 from os import makedirs
 from os import environ
@@ -25,8 +24,8 @@ from time import gmtime, strftime
 time = strftime("%Y%m%d-%H%M%S", gmtime())
 
 from keras.utils import print_summary
-from data_helper import *
-from model_helper import create_model
+from utils.load_data import load_data, split_data
+from utils.model_helper import create_model
 
 
 def main(args):

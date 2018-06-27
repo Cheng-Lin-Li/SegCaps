@@ -1,4 +1,3 @@
-cython
 numpy
 scipy
 matplotlib
@@ -9,10 +8,11 @@ pillow
 SimpleITK
 keras
 h5py
-opencv-python
+
 # Depends on your environment.
-tensorflow
+# tensorflow
 # tensorflow-gpu
 
 # Below section
-pycocotools
+opencv-python
+#pycocotools

@@ -20,26 +20,25 @@ from __future__ import print_function
 import logging
 from os.path import join, basename
 from os import makedirs
-from glob import glob
-import csv
-from sklearn.model_selection import KFold
+# from glob import glob
+# import csv
+# from sklearn.model_selection import KFold
 import numpy as np
 from numpy.random import rand, shuffle
 import SimpleITK as sitk
-from sklearn.model_selection import train_test_split
-from tqdm import tqdm #Progress bar
+# from sklearn.model_selection import train_test_split
+# from tqdm import tqdm #Progress bar
 
-import matplotlib
+# import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import cv2
+# import cv2
 
 plt.ioff()
 
-from keras.preprocessing.image import *
-
-from custom_data_aug import elastic_transform, salt_pepper_noise
-from load_data import augmentImages, threadsafe_generator
+# from keras.preprocessing.image import *
+# from utils.custom_data_aug import elastic_transform, salt_pepper_noise
+from utils.load_data import augmentImages, threadsafe_generator
 
 debug = 0
 

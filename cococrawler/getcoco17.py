@@ -25,14 +25,14 @@ Data:
 Currently focus on person category data.
 
 '''
-
+import logging
 import argparse
-from os.path import join, basename
+from os.path import join
 from pycocotools.coco import COCO
 import numpy as np
 import skimage.io as io
 import matplotlib.pyplot as plt
-import pylab, os
+import os
 from tqdm import tqdm
 import cv2
 
@@ -40,17 +40,16 @@ FILE_MIDDLE_NAME = 'train'
 IMAGE_FOLDER = 'imgs'
 MASK_FOLDER = 'masks'
 RESOLUTION = 512 # Resolution of the input for the model.
-BACKGROUND_COLOR = tuple(0, 0, 0) # Black background color for padding areas
+BACKGROUND_COLOR = (0, 0, 0) # Black background color for padding areas
 
 def image_resize2square(image, desired_size = None):
     '''
     Resize image to a square by specific resolution(desired_size).
     '''
-    assert (image is None), 'Image cannot be None.'
+    assert (image is not None), 'Image cannot be None.'
 
     # Initialize the dimensions of the image to be resized and
     # grab the size of image
-    dim = None
     old_size = image.shape[:2]
 
     # if both the width and height are None, then return the
@@ -94,7 +93,7 @@ def create_path(data_dir):
         output_mask_path = join(data_dir, MASK_FOLDER) 
         if not os.path.isdir(output_mask_path):
             os.makedirs(output_mask_path)  
-        return True
+        return output_image_path, output_mask_path
     except Exception as e:
         logging.error('\nCreate folders error! Message: %s'%(str(e)))
         exit(0)
@@ -115,7 +114,7 @@ def main(args):
     file_name = ''
  
     #Create path for output
-    create_path(data_dir)
+    output_image_path, output_mask_path = create_path(data_dir)
  
     # initialize COCO API for instance annotations
     coco=COCO(annFile)
@@ -138,7 +137,7 @@ def main(args):
             pass
         
         plt.axis('off')
-        file_name = join(output_image_path, FILE_MIDDLE_NAME+str(i)+'.png')
+        file_name = join(output_image_path, FILE_MIDDLE_NAME+str(i) + '.png')
         plt.imsave(file_name, I)
          
         # Get annotation
@@ -153,7 +152,7 @@ def main(args):
         # Background color = (R,G,B)=[68, 1, 84] for MS COCO 2017
         # save the mask image
         mask = image_resize2square(mask, args.resolution)
-        file_name = join(output_mask_path, FILE_MIDDLE_NAME+str(i)+'.png')
+        file_name = join(output_mask_path, FILE_MIDDLE_NAME+str(i) + '.png')
         plt.imsave(file_name, mask)
          
     print('Image Generation Complete !')
@@ -166,18 +165,18 @@ if __name__ == '__main__':
     $python3 getcoco17 --data_root_dir ./data --category person dog --annotation_dir './annotations/instances_val2017.json --number 10'
     '''
     
-    parser = argparse.ArgumentParser(description='Download COCO 2017 image Data')
-    parser.add_argument('--data_root_dir', type=str, required=False,
+    parser = argparse.ArgumentParser(description = 'Download COCO 2017 image Data')
+    parser.add_argument('--data_root_dir', type = str, required = False,
                         help='The root directory for your data.')
-    parser.add_argument('--category', nargs='+', type=str, default='person',
+    parser.add_argument('--category', nargs = '+', type=str, default = 'person',
                         help='MS COCO object categories list (--category person dog cat). default value is person')
-    parser.add_argument('--annotation_file', type=str, default='./instances_val2017.json',
+    parser.add_argument('--annotation_file', type = str, default = './instances_val2017.json',
                         help='The annotation json file directory of MS COCO object categories list. file name should be instances_val2017.json')    
-    parser.add_argument('--resolution', type=int, default=512,
+    parser.add_argument('--resolution', type = int, default = 0,
                         help='The resolution of images you want to transfer. It will be a square image.'
-                        'Default resolution is 512. resolution = 0 will keep original image resolution')
+                        'Default is 0. resolution = 0 will keep original image resolution')
     
-    parser.add_argument('--number', type=int, default=10,
+    parser.add_argument('--number', type = int, default = 10,
                         help='The total number of images you want to download.')    
 
     arguments = parser.parse_args()
