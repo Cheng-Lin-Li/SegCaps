@@ -20,22 +20,20 @@ from __future__ import print_function
 import logging
 from os.path import join, basename
 from os import makedirs
-# import csv
+
 import numpy as np
 from numpy.random import rand, shuffle
-# import SimpleITK as sitk
-# from sklearn.model_selection import train_test_split
-# from tqdm import tqdm #Progress bar
 from PIL import Image
 
 # import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# import cv2
+
 
 plt.ioff()
 
-from utils.load_data import augmentImages, threadsafe_generator, image_resize2square
+from utils.custom_data_aug import augmentImages, image_resize2square
+from utils.threadsafe import threadsafe_generator
 
 debug = 0
 IMAGE_SIZE = 512
@@ -113,8 +111,8 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             # Only need one channel for black and white      
             mask = mask[:,:,:1]
 
-            mask[mask >= 1] = 1 # The mask. ie. class of Person
-            mask[mask != 1] = 0 # Non Person / Background
+            mask[mask >= 1] = 255 # The mask. ie. class of Person
+            mask[mask != 255] = 0 # Non Person / Background
             mask = mask.astype(np.uint8)
 
         if not no_masks:
