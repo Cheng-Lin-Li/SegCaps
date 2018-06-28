@@ -18,88 +18,26 @@ Enhancement:
 from __future__ import print_function
 
 import logging
-import threading
+
 from os.path import join, basename
 from os import makedirs
 from glob import glob
 import csv
 from sklearn.model_selection import KFold
 import numpy as np
-# from numpy.random import rand, shuffle
+
 import SimpleITK as sitk
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm #Progress bar
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import cv2
 
 plt.ioff()
 
-from keras.preprocessing.image import random_rotation, random_shift, random_shear, random_zoom
-
-from utils.custom_data_aug import elastic_transform, salt_pepper_noise
-
-MASK_BACKGROUND = (0,0,0,0)    
 debug = 0
+K = 1 # Number of K folds
 
-''' Make the generators threadsafe in case of multiple threads '''
-class threadsafe_iter:
-    """Takes an iterator/generator and makes it thread-safe by
-    serializing call to the `next` method of given iterator/generator.
-    """
-    def __init__(self, it):
-        self.it = it
-        self.lock = threading.Lock()
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        with self.lock:
-            return self.it.__next__()
-
-
-def threadsafe_generator(f):
-    """A decorator that takes a generator function and makes it thread-safe.
-    """
-    def g(*a, **kw):
-        return threadsafe_iter(f(*a, **kw))
-    return g
-
-
-def image_resize2square(image, desired_size = None):
-    '''
-    Transform image to a square image with desired size(resolution)
-    Padding image with black color which defined as MASK_BACKGROUND
-    '''
-    
-    # initialize dimensions of the image to be resized and
-    # grab the image size
-    old_size = image.shape[:2]
-
-    # if both the width and height are None, then return the
-    # original image
-    if desired_size is None or (old_size[0]==desired_size and old_size[1]==desired_size):
-        return image
-
-    # calculate the ratio of the height and construct the
-    # dimensions
-    ratio = float(desired_size)/max(old_size)
-    new_size = tuple([int(x*ratio) for x in old_size])
-
-    # new_size should be in (width, height) format
-    resized = cv2.resize(image, (new_size[1], new_size[0]))
-
-    delta_w = desired_size - new_size[1]
-    delta_h = desired_size - new_size[0]
-    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
-    left, right = delta_w // 2, delta_w - (delta_w // 2)
-
-    new_image = cv2.copyMakeBorder(resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value = MASK_BACKGROUND)
-
-    # return the resized image
-    return new_image
 
 def load_data(root, split):
     # Load the training and testing lists
@@ -112,7 +50,8 @@ def load_data(root, split):
         testing_list = list(reader)
 
     new_training_list, validation_list = train_test_split(training_list, test_size = 0.1, random_state = 7)
-
+    if new_training_list == []: # if training_list only have 1 image file.
+        new_training_list = validation_list
     return new_training_list, validation_list, testing_list
 
 def compute_class_weights(root, train_data_list):
@@ -152,7 +91,7 @@ def load_class_weights(root, split):
         return value
 
 
-def split_data(root_path, num_splits=4):
+def split_data(root_path, num_splits = K):
     mask_list = []
     for ext in ('*.mhd', '*.hdr', '*.nii', '*.png'): #add png file support
         mask_list.extend(sorted(glob(join(root_path,'imgs',ext)))) # check imgs instead of masks
@@ -179,58 +118,5 @@ def split_data(root_path, num_splits=4):
                 writer.writerow([basename(mask_list[i])])
         n += 1
 
-def flip_axis(x, axis):
-    x = np.asarray(x).swapaxes(axis, 0)
-    x = x[::-1, ...]
-    x = x.swapaxes(0, axis)
-    return x
 
-def augmentImages(batch_of_images, batch_of_masks):
-    for i in range(len(batch_of_images)):
-        img_and_mask = np.concatenate((batch_of_images[i, ...], batch_of_masks[i,...]), axis=2)
-        if img_and_mask.ndim == 4: # This assumes single channel data. For multi-channel you'll need
-            # change this to put all channel in slices channel
-            orig_shape = img_and_mask.shape
-            img_and_mask = img_and_mask.reshape((img_and_mask.shape[0:3]))
 
-        if np.random.randint(0,10) == 7:
-            img_and_mask = random_rotation(img_and_mask, rg=45, row_axis=0, col_axis=1, channel_axis=2,
-                                           fill_mode='constant', cval=0.)
-
-        if np.random.randint(0, 5) == 3:
-            img_and_mask = elastic_transform(img_and_mask, alpha=1000, sigma=80, alpha_affine=50)
-
-        if np.random.randint(0, 10) == 7:
-            img_and_mask = random_shift(img_and_mask, wrg=0.2, hrg=0.2, row_axis=0, col_axis=1, channel_axis=2,
-                                        fill_mode='constant', cval=0.)
-
-        if np.random.randint(0, 10) == 7:
-            img_and_mask = random_shear(img_and_mask, intensity=16, row_axis=0, col_axis=1, channel_axis=2,
-                         fill_mode='constant', cval=0.)
-
-        if np.random.randint(0, 10) == 7:
-            img_and_mask = random_zoom(img_and_mask, zoom_range=(0.75, 0.75), row_axis=0, col_axis=1, channel_axis=2,
-                         fill_mode='constant', cval=0.)
-
-        if np.random.randint(0, 10) == 7:
-            img_and_mask = flip_axis(img_and_mask, axis=1)
-
-        if np.random.randint(0, 10) == 7:
-            img_and_mask = flip_axis(img_and_mask, axis=0)
-
-        if np.random.randint(0, 10) == 7:
-            salt_pepper_noise(img_and_mask, salt=0.2, amount=0.04)
-
-        if batch_of_images.ndim == 4:
-            batch_of_images[i, ...] = img_and_mask[...,0:img_and_mask.shape[2]//2]
-            batch_of_masks[i,...] = img_and_mask[...,img_and_mask.shape[2]//2:]
-        if batch_of_images.ndim == 5:
-            img_and_mask = img_and_mask.reshape(orig_shape)
-            batch_of_images[i, ...] = img_and_mask[...,0:img_and_mask.shape[2]//2, :]
-            batch_of_masks[i,...] = img_and_mask[...,img_and_mask.shape[2]//2:, :]
-
-        # Ensure the masks did not get any non-binary values.
-        batch_of_masks[batch_of_masks > 0.5] = 1
-        batch_of_masks[batch_of_masks <= 0.5] = 0
-
-    return(batch_of_images, batch_of_masks)
