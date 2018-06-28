@@ -54,7 +54,9 @@ def main(args):
         net_input_shape = (img_shape[0], img_shape[1], args.slices)
 
     # Create the model for training/testing/manipulation
-    model_list = create_model(args=args, input_shape=net_input_shape)
+    # enable_decoder = False only for SegCaps R3 to disable recognition image output on evaluation model 
+    # to speed up performance.
+    model_list = create_model(args=args, input_shape=net_input_shape, enable_decoder=False)
     print_summary(model=model_list[0], positions=[.38, .65, .75, 1.])
 
     args.output_name = 'split-' + str(args.split_num) + '_batch-' + str(args.batch_size) + \
@@ -129,7 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--split_num', type = int, default = 0,
                         help = 'Which training split to train/test on.')
     parser.add_argument('--net', type = str.lower, default = 'segcapsr3',
-                        choices = ['segcapsr3', 'segcapsr1', 'segcapsbasic', 'unet', 'tiramisu'],
+                        choices = ['segcapsr3', 'segcapsr1', 'capsbasic', 'unet', 'tiramisu'],
                         help = 'Choose your network.')
     parser.add_argument('--train', type = int, default = 1, choices = [0,1],
                         help = 'Set to 1 to enable training.')
