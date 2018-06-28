@@ -37,8 +37,8 @@ import matplotlib.pyplot as plt
 plt.ioff()
 
 # from keras.preprocessing.image import *
-# from utils.custom_data_aug import elastic_transform, salt_pepper_noise
-from utils.load_data import augmentImages, threadsafe_generator
+from utils.custom_data_aug import augmentImages
+from utils.threadsafe import threadsafe_generator
 
 debug = 0
 
