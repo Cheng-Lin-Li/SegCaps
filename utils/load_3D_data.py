@@ -56,7 +56,7 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
         makedirs(fig_path)
     except:
         pass
-
+    # The min and max pixel values in a ct image file
     ct_min = -1024
     ct_max = 3072
 
@@ -69,18 +69,22 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
 
     try:
         itk_img = sitk.ReadImage(join(img_path, img_name))
+        # img=(slices, x, y) e.g. (124, 512, 512)
         img = sitk.GetArrayFromImage(itk_img)
+        # roll axis from (slices, x, y)=(124, 512, 512) to (x, y, slices)=(512, 512, 124)
         img = np.rollaxis(img, 0, 3)
         img = img.astype(np.float32)
-        img[img > ct_max] = ct_max
-        img[img < ct_min] = ct_min
-        img += -ct_min
-        img /= (ct_max + -ct_min)
+        # Normalized image for each pixel
+        img[img > ct_max] = ct_max # set max value
+        img[img < ct_min] = ct_min # set min value
+        img += -ct_min # shift all pixel value to let min value = 0
+        img /= (ct_max + -ct_min) # normalized pixel based on the range of max and min.
 
         if not no_masks:
             itk_mask = sitk.ReadImage(join(mask_path, img_name))
             mask = sitk.GetArrayFromImage(itk_mask)
-            mask = np.rollaxis(mask, 0, 3)
+            # Switch axis=0 to the position start from = 3
+            mask = np.rollaxis(mask, 0, 3) 
             mask[mask > 250] = 1 # In case using 255 instead of 1
             mask[mask > 4.5] = 0 # Trachea = 5
             mask[mask >= 1] = 1 # Left lung = 3, Right lung = 4
