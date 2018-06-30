@@ -11,7 +11,6 @@ Please see the README for detailed instructions for this project.
 
 from __future__ import print_function
 
-K = 1 # Number of K folds
 RESOLUTION = 512 # Resolution of the input for the model.
 GRAYSCALE = False
 LOGGING_FORMAT = '%(levelname)s %(asctime)s: %(message)s'
@@ -42,7 +41,7 @@ def main(args):
     except:
         # Create the training and test splits if not found
         logging.info('No existing training, validate, test files...System will generate it.')
-        split_data(args.data_root_dir, num_splits = K)
+        split_data(args.data_root_dir, num_splits = args.Kfold)
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
 
     # Get image properties from first image. Assume they are all the same.
@@ -201,6 +200,8 @@ if __name__ == '__main__':
                         help = 'Number of classes to segment. Default is 2. If number of classes > 2, '
                             ' the loss function will be softmax entropy and only apply on SegCapsR3'
                             '** Current version only support binary classification tasks.') 
+    parser.add_argument('--Kfold', type = int, default = 4, help = 'Define K value for K-fold cross validate'
+                            ' default K = 4')
     parser.add_argument('--loglevel', type = int, default = 4, help = 'loglevel 3 = debug, 2 = info, 1 = warning, '
                             ' 4 = error, > 4 =critical') 
     arguments = parser.parse_args()
