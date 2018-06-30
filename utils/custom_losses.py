@@ -10,8 +10,10 @@ This file contains the definitions of custom loss functions not present in the d
 '''
 
 import tensorflow as tf
+from keras import backend as K
+from keras.losses import binary_crossentropy
 
-def dice_soft(y_true, y_pred, loss_type='sorensen', axis=[1,2,3], smooth=1e-5, from_logits=False):
+def dice_soft(y_true, y_pred, loss_type='jaccard', axis=[1,2,3], smooth=1e-5, from_logits=False):
     """Soft dice (Sørensen or Jaccard) coefficient for comparing the similarity
     of two batch of data, usually be used for binary image segmentation
     i.e. labels are binary. The coefficient between 0 to 1, 1 means totally match.
@@ -109,6 +111,12 @@ def dice_hard(y_true, y_pred, threshold=0.5, axis=[1,2,3], smooth=1e-5):
 
 def dice_loss(y_true, y_pred, from_logits=False):
     return 1-dice_soft(y_true, y_pred, from_logits=False)
+
+
+def bce_dice_loss(y_true, y_pred):
+    return binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
+
+
 
 def weighted_binary_crossentropy_loss(pos_weight):
     # pos_weight: A coefficient to use on the positive examples.
