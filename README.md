@@ -1,49 +1,24 @@
 # Capsules for Object Segmentation (SegCaps)
 ### by [Rodney LaLonde](https://rodneylalonde.wixsite.com/personal) and [Ulas Bagci](http://www.cs.ucf.edu/~bagci/)
 ### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/)
-### Objectives: Improve this model for Object Segmentation on different dataset (COCO) with multi-class classification tasks.
+### Objectives: Build up a pipeline for Object Segmentation experiments on SegCaps with not only 3D CT images (LUNA 16) but also 2D color images (MS COCO 2017).
 
-## This repo is the clone implementation of SegCaps from official site with modification.
+## This repo is the clone the implementation of SegCaps from official site with restructure and enhancements.
 
 The original paper for SegCaps can be found at https://arxiv.org/abs/1804.04241.
 The original source code can be found at https://github.com/lalonderodney/SegCaps
-A project page for this work can be found at https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation.
-
-
-## TODO List:
-  1. Execute programs on LUNA 16 dataset. Done. Jun 11
-    1-1. Porting program from python 2.7 to 3.6 (Jun 11)
-    1-2. Execute manipulation function. (Jun 11)
-    1-2. Execute test function on one image without pre-trained weight(Jun 11)
-    1-3. Execute train function on 3 images. (Jun 12)
-    1-4. Execute test function on trained model (Jun 12)
-    1-5. Display original image and result mask image. (Jun 12)
-    1-6. Identify input image mask format. 
-  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
-    2-1. Identify COCO stuff 2017 as target dataset.
-    2-2. Download annotation files for COCO 2017.
-  3. Test existing program on color images.
-    3-1. Generate single class mask on COCO masked image data.(Jun 13)
-    3-2. Convert the image mask format to background=0, objects=1. 
-    3-3. Feed the color images with single class mask to model.
-  4. Modify program for color images.
-  5. Modify existing program on multi-classification tasks.
-  6. Integrate model with webcam.
-  7. Pipeline up:
-    7-1. Modify code to support experiments.
-      7-1-1. Models persistent by version with configuration and dataset.
-      7-1-2. Notebook folder build up to store experiment results.
-    7-2. Test pipeline
-
+Author's project page for this work can be found at https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation.
 
 
 ## Getting Started Guide
 
-### Install Required Packages on Ubuntu / Windows
+The program was modified to support python 3.6 on Ubuntu 18.04 and Windows 10.
+
+### 1. Install Required Packages on Ubuntu / Windows
 This repo of code is written for Keras using the TensorFlow backend. 
 You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
 
-Please install all required packages before using this code.
+Please install all required packages before using programs.
 
 
 ```bash
@@ -59,8 +34,56 @@ sudo apt-get update
 sudo apt-get install libjasper-dev
 ```
 
-### Install package on Raspberry Pi 3
+### 2. Download this repo to your own folder
+Example: repo folder name ~/SegCaps/
 
+### 3. Make your data directory.
+Below commands:
+3-1. Create root folder name 'data' in the repo folder. All models, results, etc. are saved to this root directory.
+3-2. Create imgs and masks folders for image and mask files. 
+```bash
+mkdir data
+chmod 755 data
+cd ./data
+mkdir imgs
+mkdir masks
+chmod 755 *
+cd ..
+```
+
+### 4. Select Your dataset
+
+#### 4-1. Test the result on original LUNA 16 dataset.
+  1. Go to [LUng Nodule Analysis 2016 Grand-Challenges website](https://luna16.grand-challenge.org/)
+  2. Get an account by registration.
+  3. Join the 'LUNA 16' challenge by click 'All Challenges' on the tab of top. Click the 'Join' and goto 'Download' section to get your data.
+  4. copy your image files into BOTH ./data/imgs and ./data/masks folders.
+
+#### 4-2. Test on MS COCO dataset.
+The repo include a crawler program to download your own class of images for training.
+Example: Download 10 images and mask files with 'person' class from MS COCO dataset.
+
+```bash
+cd ./cococrawler
+$python3 getcoco17.py --data_root_dir ../data --category person --annotation_file ./annotations/instances_val2017.json --number 10
+```
+
+### 5. Train your model
+#### 5-1 Main File
+
+From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
+
+#### Example command: Train SegCaps R3 on MS COCO dataset without GPU support.
+
+```bash
+python3 main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --loss dice --data_root_dir=data --which_gpus=-2 --gpus=0 --dataset mscoco17 
+```
+### Program Descriptions
+  1. main.py: The entry point of this project.
+  2. load_3D_data.py: The data loading model.
+  
+### Install package on Raspberry Pi 3
+### The section is under constructing. The SegCaps model cannot fit into the memory of Raspberry Pi 3 so far.
 #### Download tensorflow pre-compile version for ARM v7.
 Tensorflow for ARM - Github Repo:
 https://github.com/lhelontra/tensorflow-on-arm/releases
@@ -69,36 +92,33 @@ installation instruction.
 
 https://medium.com/@abhizcc/installing-latest-tensor-flow-and-keras-on-raspberry-pi-aac7dbf95f2
 
-
 #### OpenCV installation on Raspberry Pi 3
 https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
-
-
-### Dataset
-
-Test the result on original LUNA 16 dataset.
-  1. Go to [LUng Nodule Analysis 2016 Grand-Challenges website](https://luna16.grand-challenge.org/)
-  2. Get an account by registration.
-  3. Join the 'LUNA 16' challenge by click 'All Challenges' on the tab of top. Click the 'Join' and goto 'Download' section to get your data.
-
-
-### Dataset Structure
-
-Inside the data root folder (*i.e.* where you have your data stored) you should have two folders: one called *imgs* and one called *masks*. All models, results, etc. are saved to this same root directory.
-
-You also need to create a *split_lists* folder to keep training and testing index files.
-*train_split_0.csv* for training set.
-*test_split_0.csv* for test set.
-
-### Main File
-
-From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
-
-### Program Descriptions
-  1. main.py: The entry point of this project.
-  2. load_3D_data.py: The data loading model.
-  
+## TODO List:
+  1. Execute programs on LUNA 16 dataset. Done. Jun 11
+    1-1. Porting program from python 2.7 to 3.6 (Jun 11)
+    1-2. Execute manipulation function. (Jun 11)
+    1-2. Execute test function on one image without pre-trained weight(Jun 11)
+    1-3. Execute train function on 3 images. (Jun 12)
+    1-4. Execute test function on trained model (Jun 12)
+    1-5. Display original image and result mask image. (Jun 12)
+    1-6. Identify input image mask format. (Jun 14)
+  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
+    2-1. Identify COCO stuff 2017 as target dataset. (Jun 15)
+    2-2. Download annotation files for COCO 2017. (Jun 15)
+  3. Test existing program on color images.
+    3-1. Generate single class mask on COCO masked image data.(Jun 13)
+    3-2. Convert the image mask format to background=0, objects=1. (Jun 18)
+    3-3. Convert the color image to gray scale image (Jun 18)
+    3-3. Feed the color images with single classes mask to model for training. (Jun 21)
+  5. Pipeline up:
+    5-1. Modify code to support experiments.(Jun 25)
+      5-1-1. Models persistent by version with configuration and dataset.
+      5-1-2. Notebook folder build up to store experiment results.
+    5-2. Test pipeline (Jun 27)
+  4. Modify program for color images. (Jun 29)
+  6. Integrate model with webcam.
 
 ### Citation
 
