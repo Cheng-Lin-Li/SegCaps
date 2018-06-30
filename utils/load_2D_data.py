@@ -36,9 +36,10 @@ from utils.custom_data_aug import augmentImages, image_resize2square
 from utils.threadsafe import threadsafe_generator
 
 debug = 0
-IMAGE_SIZE = 512
+RESOLUTION = 512
 COCO_BACKGROUND = (68, 1, 84, 255)
 MASK_BACKGROUND = (0,0,0,0)      
+GRAYSCALE = False
 
 def change_background_color(img, original_color, new_color):
     '''
@@ -54,18 +55,37 @@ def change_background_color(img, original_color, new_color):
     img[:,:,:4][mask] = [r2, g2, b2, a2]
     return img
 
-def image_enhance(image, num):
+def image_enhance(image, shift, normalized = False):
     '''
     Input image is a numpy array with unit8 grayscale.
-    This function will enhance the bright by adding num to each pixel. 
+    This function will enhance the bright by adding num to each pixel.
+    perform normalization 
     '''
-    for i in range(num):
-        image += 1
-        # If pixel value == 0 which means the value = 256 but overflow to 0
-        # shift the overflow pix values to 255. 
-        image[image == 0] = 255 
+    if shift > 0:
+        for i in range(shift):
+            image += 1
+            # If pixel value == 0 which means the value = 256 but overflow to 0
+            # shift the overflow pix values to 255. 
+            image[image == 0] = 255
+    if normalized == True:
+        image = image/255
     return image
 
+def process_image(img, shift, normalized, resolution):
+    '''
+    Pre-process image before store in numpy file.
+        shift: shift all pixels a distance with the shift value to avoid black color in image.
+        Normailzed: normalized the image pixel into 0~1 by divided with 255 in each pixel.
+        resolution: change image resolution to fit model.
+    '''
+    # Add 5 for each pixel on the grayscale image.
+    img = image_enhance(img, shift = shift, normalized = normalized)
+
+    # The source image should be 512X512 resolution.
+    img = image_resize2square(img, resolution)    
+    
+    return img
+    
 def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     fname = img_name[:-4]
     numpy_path = join(root_path, 'np_files')
@@ -91,15 +111,20 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     try:       
         img = np.array(Image.open(join(img_path, img_name)))
 
-        # TODO computing by color image
-        # Translate the image to grayscale by PILLOW package
-        img = np.array(Image.fromarray(img).convert('L'))  
-        # Add 5 for each pix on the grayscale image.
-        img = image_enhance(img, 5)
-        # The source image should be 512X512 resolution.
-        img = image_resize2square(img, IMAGE_SIZE)        
-        img = img.reshape([img.shape[0], img.shape[1], 1])
-        
+        if GRAYSCALE == True:
+            # Translate the image to grayscale by PILLOW package
+            img = np.array(Image.fromarray(img).convert('L'))  
+            # Add 5 for each pixel and change resolution on the image.
+            img = process_image(img, shift = 5, normalized = True, resolution = RESOLUTION)
+
+            # Reshape numpy from 2 to 3 dimensions
+            img = img.reshape([img.shape[0], img.shape[1], 1])
+        else: # Color image with 3 channels
+            # Add 5 for each pixel and change resolution on the image.
+            img = process_image(img, shift = 5, normalized = True, resolution = RESOLUTION)
+            # Keep RGB channel, remove alpha channel
+            img = img[:,:,:3]            
+            
         if not no_masks:
             # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
             mask = np.array(Image.open(join(mask_path, img_name)))
@@ -111,8 +136,8 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             # Only need one channel for black and white      
             mask = mask[:,:,:1]
 
-            mask[mask >= 1] = 255 # The mask. ie. class of Person
-            mask[mask != 255] = 0 # Non Person / Background
+            mask[mask >= 1] = 1 # The mask. ie. class of Person
+            mask[mask != 1] = 0 # Non Person / Background
             mask = mask.astype(np.uint8)
 
         if not no_masks:
@@ -247,7 +272,15 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
                     continue
                 else:
                     logging.info('\nFinished making npz file.')
-
+            
+            # New added for debugging
+            if numSlices == 1:
+                subSampAmt = 0
+            elif subSampAmt == -1 and numSlices > 1: # Only one slices. code can be removed.
+                np.random.seed(None)
+                subSampAmt = int(rand(1)*(val_img.shape[2]*0.05))
+            
+            # We don't need indicies in 2D image.        
             indicies = np.arange(0, val_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
             if shuff:
                 shuffle(indicies)

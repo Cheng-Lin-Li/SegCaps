@@ -11,8 +11,11 @@ Please see the README for detailed instructions for this project.
 
 from __future__ import print_function
 
+K = 1 # Number of K folds
 RESOLUTION = 512 # Resolution of the input for the model.
+GRAYSCALE = False
 LOGGING_FORMAT = '%(levelname)s %(asctime)s: %(message)s'
+
 
 import sys, logging
 from os.path import join
@@ -28,6 +31,7 @@ from utils.load_data import load_data, split_data
 from utils.model_helper import create_model
 
 
+
 def main(args):
     # Ensure training, testing, and manip are not all turned off
     assert (args.train or args.test or args.manip), 'Cannot have train, test, and manip all set to 0, Nothing to do.'
@@ -38,7 +42,7 @@ def main(args):
     except:
         # Create the training and test splits if not found
         logging.info('No existing training, validate, test files...System will generate it.')
-        split_data(args.data_root_dir, num_splits=4)
+        split_data(args.data_root_dir, num_splits = K)
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
 
     # Get image properties from first image. Assume they are all the same.
@@ -51,12 +55,14 @@ def main(args):
     else:
         args.slices = 1
         img_shape = (RESOLUTION, RESOLUTION, img_shape[2])
-        net_input_shape = (img_shape[0], img_shape[1], args.slices)
-
+        if GRAYSCALE == True:
+            net_input_shape = (RESOLUTION, RESOLUTION, img_shape[2])
+        else:
+            net_input_shape = (RESOLUTION, RESOLUTION, 1) # only one channel
     # Create the model for training/testing/manipulation
     # enable_decoder = False only for SegCaps R3 to disable recognition image output on evaluation model 
     # to speed up performance.
-    model_list = create_model(args=args, input_shape=net_input_shape, enable_decoder=False)
+    model_list = create_model(args=args, input_shape=net_input_shape, enable_decoder=True)
     print_summary(model=model_list[0], positions=[.38, .65, .75, 1.])
 
     args.output_name = 'split-' + str(args.split_num) + '_batch-' + str(args.batch_size) + \
@@ -161,7 +167,7 @@ if __name__ == '__main__':
                         help = 'Number of slices to include for training/testing.')
     parser.add_argument('--subsamp', type = int, default = -1,
                         help = 'Number of slices to skip when forming 3D samples for training. Enter -1 for random '
-                             'subsampling up to 5% of total slices.')
+                             'subsampling up to 5%% of total slices.')
     parser.add_argument('--stride', type = int, default = 1,
                         help = 'Number of slices to move when generating the next sample.')
     parser.add_argument('--verbose', type = int, default = 1, choices = [0, 1, 2],
