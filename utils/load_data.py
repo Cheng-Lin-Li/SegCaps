@@ -36,7 +36,7 @@ import matplotlib.pyplot as plt
 plt.ioff()
 
 debug = 0
-K = 1 # Number of K folds
+
 
 
 def load_data(root, split):
@@ -91,12 +91,12 @@ def load_class_weights(root, split):
         return value
 
 
-def split_data(root_path, num_splits = K):
+def split_data(root_path, num_splits):
     mask_list = []
     for ext in ('*.mhd', '*.hdr', '*.nii', '*.png'): #add png file support
-        mask_list.extend(sorted(glob(join(root_path,'imgs',ext)))) # check imgs instead of masks
+        mask_list.extend(sorted(glob(join(root_path,'masks',ext)))) # check imgs instead of masks
 
-    assert len(mask_list) != 0, 'Unable to find any files in {}'.format(join(root_path,'imgs'))
+    assert len(mask_list) != 0, 'Unable to find any files in {}'.format(join(root_path,'masks'))
 
     outdir = join(root_path,'split_lists')
     try:
@@ -104,19 +104,31 @@ def split_data(root_path, num_splits = K):
     except:
         pass
 
-    kf = KFold(n_splits=num_splits)
-    n = 0
-    for train_index, test_index in kf.split(mask_list):
-        with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
+    if num_splits == 1:
+        # Testing model, training set = testing set = 1 image
+        train_index = test_index = mask_list
+        with open(join(outdir,'train_split_' + str(0) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            for i in train_index:
-                print('basename=%s'%([basename(mask_list[i])]))
-                writer.writerow([basename(mask_list[i])])
-        with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
+            print('basename=%s'%([basename(mask_list[0])]))
+            writer.writerow([basename(mask_list[0])])
+        with open(join(outdir,'test_split_' + str(0) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            for i in test_index:
-                writer.writerow([basename(mask_list[i])])
-        n += 1
+            writer.writerow([basename(mask_list[0])])
+     
+    else:
+        kf = KFold(n_splits=num_splits)
+        n = 0
+        for train_index, test_index in kf.split(mask_list):
+            with open(join(outdir,'train_split_' + str(n) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for i in train_index:
+                    print('basename=%s'%([basename(mask_list[i])]))
+                    writer.writerow([basename(mask_list[i])])
+            with open(join(outdir,'test_split_' + str(n) + '.csv'), 'w', encoding='utf-8', newline='') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for i in test_index:
+                    writer.writerow([basename(mask_list[i])])
+            n += 1
 
 
 
