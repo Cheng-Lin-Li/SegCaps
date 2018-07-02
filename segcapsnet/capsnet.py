@@ -14,14 +14,14 @@ K.set_image_data_format('channels_last')
 
 from segcapsnet.capsule_layers import ConvCapsuleLayer, DeconvCapsuleLayer, Mask, Length
 
-def CapsNetR3(input_shape, n_class=2):
-    x = layers.Input(shape=input_shape)
+def CapsNetR3(input_shape, n_class=2, enable_decoder=True):
+    x = layers.Input(shape=input_shape) # x=keras_shape(None, 512, 512, 3)
 
     # Layer 1: Just a conventional Conv2D layer
     conv1 = layers.Conv2D(filters=16, kernel_size=5, strides=1, padding='same', activation='relu', name='conv1')(x)
 
     # Reshape layer to be 1 capsule x [filters] atoms
-    _, H, W, C = conv1.get_shape()
+    _, H, W, C = conv1.get_shape() # _, 512, 512, 16
     conv1_reshaped = layers.Reshape((H.value, W.value, 1, C.value))(conv1)
 
     # Layer 1: Primary Capsule: Conv cap with routing 1
@@ -88,13 +88,13 @@ def CapsNetR3(input_shape, n_class=2):
     out_seg = Length(num_classes=n_class, seg=True, name='out_seg')(seg_caps)
 
     # Decoder network.
-    _, H, W, C, A = seg_caps.get_shape()
-    y = layers.Input(shape=input_shape[:-1]+(1,))
-    masked_by_y = Mask()([seg_caps, y])  # The true label is used to mask the output of capsule layer. For training
-    masked = Mask()(seg_caps)  # Mask using the capsule with maximal length. For prediction
+    _, H, W, C, A = seg_caps.get_shape() #(?, 512, 512, 1, 16)
+    y = layers.Input(shape=input_shape[:-1]+(1,)) #y: keras_shape(512, 512, 1)
+    masked_by_y = Mask()([seg_caps, y])  # The true label is used to mask the output of capsule layer. For training (None, 512, 512, 1, 16)
+    masked = Mask()(seg_caps)  # Mask using the capsule with maximal length. For prediction ()
 
     def shared_decoder(mask_layer):
-        recon_remove_dim = layers.Reshape((H.value, W.value, A.value))(mask_layer)
+        recon_remove_dim = layers.Reshape((H.value, W.value, A.value))(mask_layer) #mask_layer=(?, 512, 512, 1, 16)
 
         recon_1 = layers.Conv2D(filters=64, kernel_size=1, padding='same', kernel_initializer='he_normal',
                                 activation='relu', name='recon_1')(recon_remove_dim)
@@ -109,8 +109,10 @@ def CapsNetR3(input_shape, n_class=2):
 
     # Models for training and evaluation (prediction)
     train_model = models.Model(inputs=[x, y], outputs=[out_seg, shared_decoder(masked_by_y)])
-    eval_model = models.Model(inputs=x, outputs=[out_seg, shared_decoder(masked)])
-
+    if enable_decoder == True:
+        eval_model = models.Model(inputs=x, outputs=[out_seg, shared_decoder(masked)])
+    else:
+        eval_model = models.Model(inputs=x, outputs=[out_seg])
     # manipulate model
     noise = layers.Input(shape=((H.value, W.value, C.value, A.value)))
     noised_seg_caps = layers.Add()([seg_caps, noise])

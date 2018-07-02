@@ -51,11 +51,11 @@ class Mask(layers.Layer):
     def call(self, inputs, **kwargs):
         if type(inputs) is list: # The true label is used to mask the output of capsule layer. For training
             assert len(inputs) == 2
-            input, mask = inputs
+            input, mask = inputs #(?, 512, 512, 1, 16), (?, 512, 512, 1)
             _, hei, wid, _, _ = input.get_shape()
             if self.resize_masks:
                 mask = tf.image.resize_bicubic(mask, (hei.value, wid.value))
-            mask = K.expand_dims(mask, -1)
+            mask = K.expand_dims(mask, -1) #mask = (?, 512, 512, 1, 1)
             if input.get_shape().ndims == 3:
                 masked = K.batch_flatten(mask * input)
             else:
@@ -319,7 +319,7 @@ def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
     def _body(i, logits, activations):
         """Routing while loop."""
         # route: [batch, input_dim, output_dim, ...]
-        route = tf.nn.softmax(logits, dim=-1)
+        route = tf.nn.softmax(logits, axis=-1)
         preactivate_unrolled = route * votes_trans
         preact_trans = tf.transpose(preactivate_unrolled, r_t_shape)
         preactivate = tf.reduce_sum(preact_trans, axis=1) + biases
@@ -348,6 +348,6 @@ def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
 
 
 def _squash(input_tensor):
-    norm = tf.norm(input_tensor, axis=-1, keep_dims=True)
+    norm = tf.norm(input_tensor, axis=-1, keepdims=True)
     norm_squared = norm * norm
     return (input_tensor / norm) * (norm_squared / (1 + norm_squared))
