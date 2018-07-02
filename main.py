@@ -12,7 +12,7 @@ Please see the README for detailed instructions for this project.
 from __future__ import print_function
 
 RESOLUTION = 512 # Resolution of the input for the model.
-GRAYSCALE = False
+GRAYSCALE = True
 LOGGING_FORMAT = '%(levelname)s %(asctime)s: %(message)s'
 
 
@@ -48,16 +48,15 @@ def main(args):
     logging.info('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
     # Get image shape from the first image.
     image = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0])))
-    img_shape = image.shape #(500,500,4)    
+    img_shape = image.shape # # (x, y, channels)
     if args.dataset == 'luna16':
         net_input_shape = (img_shape[1], img_shape[2], args.slices)    
     else:
         args.slices = 1
-        img_shape = (RESOLUTION, RESOLUTION, img_shape[2])
         if GRAYSCALE == True:
-            net_input_shape = (RESOLUTION, RESOLUTION, img_shape[2])
-        else:
             net_input_shape = (RESOLUTION, RESOLUTION, 1) # only one channel
+        else:
+            net_input_shape = (RESOLUTION, RESOLUTION, 3) # Only access RGB 3 channels.
     # Create the model for training/testing/manipulation
     # enable_decoder = False only for SegCaps R3 to disable recognition image output on evaluation model 
     # to speed up performance.
@@ -158,7 +157,7 @@ if __name__ == '__main__':
     # loss_op = tf.reduce_mean(cross_entropy, name="fcn_loss")    
     parser.add_argument('--batch_size', type = int, default = 1,
                         help = 'Batch size for training/testing.')
-    parser.add_argument('--initial_lr', type = float, default = 0.0001,
+    parser.add_argument('--initial_lr', type = float, default = 0.00001,
                         help = 'Initial learning rate for Adam.')
     parser.add_argument('--recon_wei', type = float, default = 131.072,
                         help = "If using capsnet: The coefficient (weighting) for the loss of decoder")
