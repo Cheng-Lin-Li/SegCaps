@@ -65,16 +65,18 @@ def get_callbacks(arguments):
     # Due to customized major layers and loss function, the program just store the model weights.
     # Model should be load by program then load the model weights for inference.
     model_checkpoint = ModelCheckpoint(join(arguments.check_dir, arguments.output_name + '_model_' + arguments.time + '.hdf5'),
-                                       monitor=monitor_name, save_best_only=False, save_weights_only=False,
+                                       monitor=monitor_name, save_best_only=True, save_weights_only=False,
                                        verbose=1, mode='max')
-    lr_reducer = ReduceLROnPlateau(monitor=monitor_name, factor=0.05, cooldown=0, patience=5,verbose=1, mode='max')
-    early_stopper = EarlyStopping(monitor=monitor_name, min_delta=0, patience=50, verbose=0, mode='max')
+    lr_reducer = ReduceLROnPlateau(monitor=monitor_name, factor=0.05, cooldown=0, patience=50,verbose=1, mode='max')
+    early_stopper = EarlyStopping(monitor=monitor_name, min_delta=0, patience=250, verbose=0, mode='max')
 
     return [model_checkpoint, csv_logger, lr_reducer, early_stopper, tb]
 
 def compile_model(args, net_input_shape, uncomp_model):
     # Set optimizer loss and metrics
-    opt = Adam(lr=args.initial_lr, beta_1=0.99, beta_2=0.999, decay=1e-6)
+#     opt = Adam(lr=args.initial_lr, beta_1=0.99, beta_2=0.999, decay=1e-6)
+    # Revised decay rate to match with the original experiment parameter on the paper
+    opt = Adam(lr=args.initial_lr, beta_1=0.99, beta_2=0.999, decay = 0.05)    
     if args.net.find('caps') != -1:
         metrics = {'out_seg': dice_hard}
     else:
@@ -163,13 +165,13 @@ def train(args, train_list, val_list, u_model, net_input_shape):
         generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
                                stride=args.stride, shuff=args.shuffle_data, aug_data=args.aug_data),
-        max_queue_size=4, workers=4, use_multiprocessing=False,
-        steps_per_epoch=20,
+        max_queue_size=4, workers=4, use_multiprocessing=True,
+        steps_per_epoch=1000,
         validation_data=generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
                                              batchSize=args.batch_size,  numSlices=args.slices, subSampAmt=0,
                                              stride=args.stride, shuff=args.shuffle_data),
-        validation_steps=1, # Set validation stride larger to see more of the data.
-        epochs=100,
+        validation_steps=50, # Set validation stride larger to see more of the data.
+        epochs=10,
         callbacks=callbacks,
         verbose=1)
     # Plot the training data collected

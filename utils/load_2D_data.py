@@ -32,14 +32,14 @@ import matplotlib.pyplot as plt
 
 plt.ioff()
 
-from utils.custom_data_aug import augmentImages, image_resize2square
+from utils.custom_data_aug import augmentImages, process_image, image_resize2square, image2float_array
 from utils.threadsafe import threadsafe_generator
 
 debug = 0
 RESOLUTION = 512
 COCO_BACKGROUND = (68, 1, 84, 255)
 MASK_BACKGROUND = (0,0,0,0)      
-GRAYSCALE = False
+GRAYSCALE = True
 
 def change_background_color(img, original_color, new_color):
     '''
@@ -55,37 +55,7 @@ def change_background_color(img, original_color, new_color):
     img[:,:,:4][mask] = [r2, g2, b2, a2]
     return img
 
-def image_enhance(image, shift, normalized = False):
-    '''
-    Input image is a numpy array with unit8 grayscale.
-    This function will enhance the bright by adding num to each pixel.
-    perform normalization 
-    '''
-    if shift > 0:
-        for i in range(shift):
-            image += 1
-            # If pixel value == 0 which means the value = 256 but overflow to 0
-            # shift the overflow pix values to 255. 
-            image[image == 0] = 255
-    if normalized == True:
-        image = image/255
-    return image
-
-def process_image(img, shift, normalized, resolution):
-    '''
-    Pre-process image before store in numpy file.
-        shift: shift all pixels a distance with the shift value to avoid black color in image.
-        Normailzed: normalized the image pixel into 0~1 by divided with 255 in each pixel.
-        resolution: change image resolution to fit model.
-    '''
-    # Add 5 for each pixel on the grayscale image.
-    img = image_enhance(img, shift = shift, normalized = normalized)
-
-    # The source image should be 512X512 resolution.
-    img = image_resize2square(img, resolution)    
-    
-    return img
-    
+  
 def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     fname = img_name[:-4]
     numpy_path = join(root_path, 'np_files')
@@ -110,12 +80,14 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
 
     try:       
         img = np.array(Image.open(join(img_path, img_name)))
+        img = img[:,:,:3]
 
         if GRAYSCALE == True:
-            # Translate the image to grayscale by PILLOW package
-            img = np.array(Image.fromarray(img).convert('L'))  
             # Add 5 for each pixel and change resolution on the image.
-            img = process_image(img, shift = 5, normalized = True, resolution = RESOLUTION)
+            img = process_image(img, shift = 5, normalized = False, resolution = RESOLUTION)
+                        
+            # Translate the image to 24bits grayscale by PILLOW package
+            img = image2float_array(img, 16777216-1)  #2^24=16777216
 
             # Reshape numpy from 2 to 3 dimensions
             img = img.reshape([img.shape[0], img.shape[1], 1])
@@ -127,14 +99,18 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             
         if not no_masks:
             # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
-            mask = np.array(Image.open(join(mask_path, img_name)))
+            mask = np.array(Image.open(join(mask_path, img_name))) # (x,y,4)
             
-            mask = image_resize2square(mask, IMAGE_SIZE)
+            mask = image_resize2square(mask, RESOLUTION)
              
             mask = change_background_color(mask, COCO_BACKGROUND, MASK_BACKGROUND) 
-#             mask = mask[:,:,:3] # Only get RGB channels. Remove alpha channel.
-            # Only need one channel for black and white      
-            mask = mask[:,:,:1]
+            if GRAYSCALE == True:      
+                # Only need one channel for black and white      
+                mask = mask[:,:,:1]
+            else:
+                mask = mask[:,:,:1] # keep 3 channels for RGB. Remove alpha channel.
+
+
 
             mask[mask >= 1] = 1 # The mask. ie. class of Person
             mask[mask != 1] = 0 # Non Person / Background
@@ -170,7 +146,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
     # (img_shape[1], img_shape[2], args.slices)
     logging.info('\n2d_generate_train_batches')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
-    mask_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.uint8)
+    mask_batch = np.zeros((np.concatenate(((batchSize,), (net_input_shape[0], net_input_shape[1], 1)))), dtype=np.uint8)
 
     while True:
         if shuff:
@@ -232,6 +208,8 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
                         plt.savefig(join(root_path, 'logs', 'ex_train.png'), format='png', bbox_inches='tight')
                         plt.close()
                     if net.find('caps') != -1: # if the network is capsule/segcaps structure
+                        # [(1, 512, 512, 3), (1, 512, 512, 1)], [(1, 512, 512, 1), (1, 512, 512, 3)]
+                        # or [(1, 512, 512, 3), (1, 512, 512, 3)], [(1, 512, 512, 3), (1, 512, 512, 3)]
                         yield ([img_batch, mask_batch], [mask_batch, mask_batch*img_batch])
                     else:
                         yield (img_batch, mask_batch)
@@ -358,18 +336,34 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
 @threadsafe_generator
 def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, subSampAmt=0,
                           stride=1, downSampAmt=1):
+    '''
+    test_img: numpy.array of image data
+    
+    '''
     # Create placeholders for testing
     logging.info('load_2D_data.generate_test_image')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     count = 0
-    test_img = np.asarray(test_img)
-    test_img = image_resize2square(test_img, net_input_shape[0])
-    # TODO computing by color image
-#         img = img[:,:,:3] # Only get RGB channels. Remove alpha channel.
-    # Translate the image to grayscale by PILLOW package
-    test_img = np.array(Image.fromarray(test_img).convert('L'))  
-    test_img = test_img.reshape([test_img.shape[0], test_img.shape[1], 1])    
 
+    #######
+    if GRAYSCALE == True:
+        test_img = test_img[:,:,:3]
+                
+        # Add 5 for each pixel and change resolution on the image.
+        test_img = process_image(test_img, shift = 5, normalized = False, resolution = RESOLUTION)
+                    
+        # Translate the image to 24bits grayscale by PILLOW package
+        test_img = image2float_array(test_img, 16777216-1)  #2^24=16777216
+
+        # Reshape numpy from 2 to 3 dimensions
+        test_img = test_img.reshape([test_img.shape[0], test_img.shape[1], 1])
+    else: # Color image with 3 channels
+        # Add 5 for each pixel and change resolution on the image.
+        test_img = process_image(test_img, shift = 5, normalized = True, resolution = RESOLUTION)
+        # Keep RGB channel, remove alpha channel
+        test_img = np.reshape(test_img, (1, test_img.shape[0], test_img.shape[1], 4))
+        test_img = test_img[:,:,:,:3]
+        
     indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
     for j in indicies:
         if img_batch.ndim == 4:
@@ -385,4 +379,7 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
         if count % batchSize == 0:
             count = 0
             yield (img_batch)
+
+    if count != 0:
+        yield (img_batch[:count,:,:,:])
        
