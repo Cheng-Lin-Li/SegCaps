@@ -30,9 +30,10 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 from keras.utils import print_summary
 from utils.data_helper import get_generator
-from utils.load_2D_data import image_enhance, image_resize2square
+from utils.custom_data_aug import process_image, image_resize2square, image2float_array
 
-IMAGE_SIZE = 512
+RESOLUTION = 512
+GRAYSCALE = True
 
 def threshold_mask(raw_output, threshold): #raw_output 3d:(119, 512, 512)
     if threshold == 0:
@@ -137,12 +138,20 @@ def test(args, test_list, model_list, net_input_shape):
             
             # Change RGB to single slice of grayscale image for MS COCO 17 dataset.
             if args.dataset == 'mscoco17':
-                # Reshape img_data from (512, 512) to (1, 512, 512)
-                img_data = np.array(Image.fromarray(img_data).convert('L'))  
-                # Add 5 for each pix on the grayscale image.
-                img_data = image_enhance(img_data, 5)
-                img_data = image_resize2square(img_data, IMAGE_SIZE)
-                img_data = np.reshape(img_data, (1, img_data.shape[0], img_data.shape[1]))
+                if GRAYSCALE == True:
+                    img_data = img_data[:,:,:3]
+                            
+                    # Add 5 for each pixel and change resolution on the image.
+                    img_data = process_image(img_data, shift = 5, normalized = False, resolution = RESOLUTION)
+                                
+                    # Translate the image to 24bits grayscale by PILLOW package
+                    img_data = image2float_array(img_data, 16777216-1)  #2^24=16777216
+        
+                    # Reshape numpy from 2 to 3 dimensions
+                    img_data = img_data.reshape([img_data.shape[0], img_data.shape[1], 1])
+                    
+                else: # RGB 3 channels treat as 3 slices.
+                    img_data = np.reshape(img_data, (1, img_data.shape[0], img_data.shape[1], 4))
 
             num_slices = img_data.shape[0]                
             logging.info('test.test: eval_model.predict_generator')
@@ -194,7 +203,7 @@ def test(args, test_list, model_list, net_input_shape):
             if args.dataset == 'mscoco17':
                 # Reshape img_data from (512, 512) to (1, 512, 512)
                 gt_data = np.array(Image.fromarray(gt_data).convert('L'))  
-                gt_data = image_resize2square(gt_data, IMAGE_SIZE)
+                gt_data = image_resize2square(gt_data, RESOLUTION)
                 gt_data = np.reshape(gt_data, (1, gt_data.shape[0], gt_data.shape[1]))
 
             # Plot Qual Figure
