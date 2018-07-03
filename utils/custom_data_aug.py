@@ -156,7 +156,7 @@ def image_resize2square(image, desired_size = None):
     # return the resized image
     return new_image
 
-def image_enhance(image, shift, normalized = False):
+def image_enhance(image, shift):
     '''
     Input image is a numpy array with unit8 grayscale.
     This function will enhance the bright by adding num to each pixel.
@@ -168,19 +168,17 @@ def image_enhance(image, shift, normalized = False):
             # If pixel value == 0 which means the value = 256 but overflow to 0
             # shift the overflow pix values to 255. 
             image[image == 0] = 255
-    if normalized == True:
-        image = image/255
+
     return image
 
-def process_image(img, shift, normalized, resolution):
+def process_image(img, shift, resolution):
     '''
     Pre-process image before store in numpy file.
         shift: shift all pixels a distance with the shift value to avoid black color in image.
-        Normailzed: normalized the image pixel into 0~1 by divided with 255 in each pixel.
         resolution: change image resolution to fit model.
     '''
     # Add 5 for each pixel on the grayscale image.
-    img = image_enhance(img, shift = shift, normalized = normalized)
+    img = image_enhance(img, shift = shift)
 
     # The source image should be 512X512 resolution.
     img = image_resize2square(img, resolution)    

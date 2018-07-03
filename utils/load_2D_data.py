@@ -84,7 +84,7 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
 
         if GRAYSCALE == True:
             # Add 5 for each pixel and change resolution on the image.
-            img = process_image(img, shift = 5, normalized = False, resolution = RESOLUTION)
+            img = process_image(img, shift = 1, resolution = RESOLUTION)
                         
             # Translate the image to 24bits grayscale by PILLOW package
             img = image2float_array(img, 16777216-1)  #2^24=16777216
@@ -93,7 +93,7 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
             img = img.reshape([img.shape[0], img.shape[1], 1])
         else: # Color image with 3 channels
             # Add 5 for each pixel and change resolution on the image.
-            img = process_image(img, shift = 5, normalized = True, resolution = RESOLUTION)
+            img = process_image(img, shift = 1, resolution = RESOLUTION)
             # Keep RGB channel, remove alpha channel
             img = img[:,:,:3]            
             
@@ -350,36 +350,37 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
         test_img = test_img[:,:,:3]
                 
         # Add 5 for each pixel and change resolution on the image.
-        test_img = process_image(test_img, shift = 5, normalized = False, resolution = RESOLUTION)
+        test_img = process_image(test_img, shift = 1, resolution = RESOLUTION)
                     
-        # Translate the image to 24bits grayscale by PILLOW package
+        # Translate the image from RGB (8bits X 3) to 24bits gray scale space by PILLOW package
         test_img = image2float_array(test_img, 16777216-1)  #2^24=16777216
 
-        # Reshape numpy from 2 to 3 dimensions
-        test_img = test_img.reshape([test_img.shape[0], test_img.shape[1], 1])
+        # Reshape numpy from 2 to 4 dimensions (slices, x, y, channels)
+        test_img = test_img.reshape([1, test_img.shape[0], test_img.shape[1], 1])
     else: # Color image with 3 channels
         # Add 5 for each pixel and change resolution on the image.
-        test_img = process_image(test_img, shift = 5, normalized = True, resolution = RESOLUTION)
+        test_img = process_image(test_img, shift = 1, resolution = RESOLUTION)
         # Keep RGB channel, remove alpha channel
         test_img = np.reshape(test_img, (1, test_img.shape[0], test_img.shape[1], 4))
         test_img = test_img[:,:,:,:3]
         
-    indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
-    for j in indicies:
-        if img_batch.ndim == 4:
-            img_batch[count, :, :, :] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
-        elif img_batch.ndim == 5:
-            # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
-            img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
-        else:
-            logging.error('Error this function currently only supports 2D and 3D data.')
-            exit(0)
-
-        count += 1
-        if count % batchSize == 0:
-            count = 0
-            yield (img_batch)
-
-    if count != 0:
-        yield (img_batch[:count,:,:,:])
+#     indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
+#     for j in indicies:
+#         if img_batch.ndim == 4:
+#             img_batch[count, :, :, :] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
+#         elif img_batch.ndim == 5:
+#             # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
+#             img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
+#         else:
+#             logging.error('Error this function currently only supports 2D and 3D data.')
+#             exit(0)
+# 
+#         count += 1
+#         if count % batchSize == 0:
+#             count = 0
+#             yield (img_batch)
+# 
+#     if count != 0:
+#         yield (img_batch[:count,:,:,:])
+    yield (test_img)
        
