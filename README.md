@@ -39,8 +39,11 @@ Example: repo folder name ~/SegCaps/
 
 ### 3. Make your data directory.
 Below commands:
-3-1. Create root folder name 'data' in the repo folder. All models, results, etc. are saved to this root directory.
-3-2. Create imgs and masks folders for image and mask files. 
+
+  3-1. Create root folder name 'data' in the repo folder. All models, results, etc. are saved to this root directory.
+
+  3-2. Create imgs and masks folders for image and mask files. 
+
 ```bash
 mkdir data
 chmod 755 data
@@ -59,8 +62,12 @@ cd ..
   3. Join the 'LUNA 16' challenge by click 'All Challenges' on the tab of top. Click the 'Join' and goto 'Download' section to get your data.
   4. copy your image files into BOTH ./data/imgs and ./data/masks folders.
 
-#### 4-2. Test on MS COCO dataset.
+#### 4-2. Test on Microsoftsoft Common Objects in COntext (MS COCO) dataset 2017.
 The repo include a crawler program to download your own class of images for training.
+But you have to download the annotation file first.
+[Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip)
+There are two JSON files contain in the zip file. Extract them into a folder. In this example is under ~/SegCaps/annotations/
+
 Example: Download 10 images and mask files with 'person' class from MS COCO dataset.
 
 ```bash
