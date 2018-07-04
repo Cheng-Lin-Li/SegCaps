@@ -98,10 +98,10 @@ def test(args, test_list, model_list, net_input_shape):
     else:
         eval_model = model_list[0]
     try:
-        logging.info('Weights_path=%s'%(weights_path))
+        logging.info('\nWeights_path=%s'%(weights_path))
         eval_model.load_weights(weights_path)
     except:
-        logging.warning('Unable to find weights path. Testing with random weights.')
+        logging.warning('\nUnable to find weights path. Testing with random weights.')
     print_summary(model=eval_model, positions=[.38, .65, .75, 1.])
 
     # Set up placeholders
@@ -117,7 +117,7 @@ def test(args, test_list, model_list, net_input_shape):
         outfile += 'assd_'
 
     # Testing the network
-    logging.info('Testing... This will take some time...')
+    logging.info('\nTesting... This will take some time...')
 
     with open(join(output_dir, args.save_prefix + outfile + 'scores.csv'), 'w') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -154,7 +154,7 @@ def test(args, test_list, model_list, net_input_shape):
                     img_data = np.reshape(img_data, (1, img_data.shape[0], img_data.shape[1], 4))
 
             num_slices = img_data.shape[0]                
-            logging.info('test.test: eval_model.predict_generator')
+            logging.info('\ntest.test: eval_model.predict_generator')
             _, _, generate_test_batches = get_generator(args.dataset)
             output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
                                                                               net_input_shape,
@@ -164,7 +164,7 @@ def test(args, test_list, model_list, net_input_shape):
                                                                               stride=1),
                                                         steps=num_slices, max_queue_size=1, workers=1,
                                                         use_multiprocessing=False, verbose=1)
-            logging.info('test.test: output_array=%s'%(output_array))
+            logging.info('\ntest.test: output_array=%s'%(output_array))
             if args.net.find('caps') != -1:
                 # A list with two images [mask, recon], get mask image.#3d:
                 # output_array=[mask(Slices, x=512, y=512, 1), recon(slices, x=512, y=512, 1)]
@@ -251,17 +251,17 @@ def test(args, test_list, model_list, net_input_shape):
             # Compute metrics
             row = [img[0][:-4]]
             if args.compute_dice:
-                logging.info('Computing Dice')
+                logging.info('\nComputing Dice')
                 dice_arr[i] = dc(output_bin, gt_data)
                 logging.info('\tDice: {}'.format(dice_arr[i]))
                 row.append(dice_arr[i])
             if args.compute_jaccard:
-                logging.info('Computing Jaccard')
+                logging.info('\nComputing Jaccard')
                 jacc_arr[i] = jc(output_bin, gt_data)
                 logging.info('\tJaccard: {}'.format(jacc_arr[i]))
                 row.append(jacc_arr[i])
             if args.compute_assd:
-                logging.info('Computing ASSD')
+                logging.info('\nComputing ASSD')
                 assd_arr[i] = assd(output_bin, gt_data, voxelspacing=sitk_img.GetSpacing(), connectivity=1)
                 logging.info('\tASSD: {}'.format(assd_arr[i]))
                 row.append(assd_arr[i])
