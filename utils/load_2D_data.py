@@ -190,7 +190,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
                     img_batch[count, :, :, :, 0] = train_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                     mask_batch[count, :, :, :, 0] = train_mask[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                 else:
-                    logging.error('Error this function currently only supports 2D and 3D data.')
+                    logging.error('\nError this function currently only supports 2D and 3D data.')
                     exit(0)
 
                 count += 1
@@ -274,7 +274,7 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
                     img_batch[count, :, :, :, 0] = val_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                     mask_batch[count, :, :, :, 0] = val_mask[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                 else:
-                    logging.error('Error this function currently only supports 2D and 3D data.')
+                    logging.error('\nError this function currently only supports 2D and 3D data.')
                     exit(0)
 
                 count += 1
@@ -296,10 +296,10 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
 def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, numSlices=1, subSampAmt=0,
                           stride=1, downSampAmt=1):
     # Create placeholders for testing
-    logging.info('load_2D_data.generate_test_batches')
+    logging.info('\nload_2D_data.generate_test_batches')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     count = 0
-    logging.info('load_2D_data.generate_test_batches: test_list=%s'%(test_list))
+    logging.info('\nload_2D_data.generate_test_batches: test_list=%s'%(test_list))
     for i, scan_name in enumerate(test_list):
         try:
             scan_name = scan_name[0]
@@ -322,7 +322,7 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
                 # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
                 img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
             else:
-                logging.error('Error this function currently only supports 2D and 3D data.')
+                logging.error('\nError this function currently only supports 2D and 3D data.')
                 exit(0)
 
             count += 1
@@ -341,7 +341,7 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
     
     '''
     # Create placeholders for testing
-    logging.info('load_2D_data.generate_test_image')
+    logging.info('\nload_2D_data.generate_test_image')
     img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
     count = 0
 
@@ -372,7 +372,7 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
 #             # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
 #             img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
 #         else:
-#             logging.error('Error this function currently only supports 2D and 3D data.')
+#             logging.error('\nError this function currently only supports 2D and 3D data.')
 #             exit(0)
 # 
 #         count += 1

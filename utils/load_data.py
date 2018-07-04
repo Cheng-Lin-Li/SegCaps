@@ -82,12 +82,12 @@ def load_class_weights(root, split):
     try:
         return np.load(class_weight_filename)
     except:
-        logging.warning('Class weight file {} not found.\nComputing class weights now. This may take '
+        logging.warning('\nClass weight file {} not found.\nComputing class weights now. This may take '
               'some time.'.format(class_weight_filename))
         train_data_list, _, _ = load_data(root, str(split))
         value = compute_class_weights(root, train_data_list)
         np.save(class_weight_filename,value)
-        logging.warning('Finished computing class weights. This value has been saved for this training split.')
+        logging.warning('\nFinished computing class weights. This value has been saved for this training split.')
         return value
 
 

@@ -192,7 +192,7 @@ def generate_train_batches(root_path, train_list, net_input_shape, net, batchSiz
                     img_batch[count, :, :, :, 0] = train_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                     mask_batch[count, :, :, :, 0] = train_mask[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                 else:
-                    logging.error('Error this function currently only supports 2D and 3D data.')
+                    logging.error('\nError this function currently only supports 2D and 3D data.')
                     exit(0)
 
                 count += 1
@@ -271,7 +271,7 @@ def generate_val_batches(root_path, val_list, net_input_shape, net, batchSize=1,
                     img_batch[count, :, :, :, 0] = val_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                     mask_batch[count, :, :, :, 0] = val_mask[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
                 else:
-                    logging.error('Error this function currently only supports 2D and 3D data.')
+                    logging.error('\nError this function currently only supports 2D and 3D data.')
                     exit(0)
 
                 count += 1
