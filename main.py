@@ -40,12 +40,12 @@ def main(args):
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
     except:
         # Create the training and test splits if not found
-        logging.info('No existing training, validate, test files...System will generate it.')
+        logging.info('\nNo existing training, validate, test files...System will generate it.')
         split_data(args.data_root_dir, num_splits = args.Kfold)
         train_list, val_list, test_list = load_data(args.data_root_dir, args.split_num)
 
     # Get image properties from first image. Assume they are all the same.
-    logging.info('Read image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
+    logging.info('\nRead image files...%s'%(join(args.data_root_dir, 'imgs', train_list[0][0])))
     # Get image shape from the first image.
     image = sitk.GetArrayFromImage(sitk.ReadImage(join(args.data_root_dir, 'imgs', train_list[0][0])))
     img_shape = image.shape # # (x, y, channels)
@@ -200,7 +200,10 @@ if __name__ == '__main__':
                             ' the loss function will be softmax entropy and only apply on SegCapsR3'
                             '** Current version only support binary classification tasks.') 
     parser.add_argument('--Kfold', type = int, default = 4, help = 'Define K value for K-fold cross validate'
-                            ' default K = 4')
+                            ' default K = 4, K = 1 for over-fitting test')
+    parser.add_argument('--retrain', type = int, default = 0, choices = [0, 1], help = 'Retrain your model based on existing weights.'
+                            ' default 0 = train your model from scratch, 1 = retrain existing model.'
+                            ' The weights file location of the model has to be provided by --weights_path parameter' )    
     parser.add_argument('--loglevel', type = int, default = 4, help = 'loglevel 3 = debug, 2 = info, 1 = warning, '
                             ' 4 = error, > 4 =critical') 
     arguments = parser.parse_args()
