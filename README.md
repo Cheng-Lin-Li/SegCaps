@@ -100,44 +100,44 @@ From the main file (main.py) you can train, test, and manipulate the segmentatio
 ```bash
 python3 main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --loss dice --data_root_dir=data --which_gpus=-2 --gpus=0 --dataset mscoco17 
 ```
-### Program Descriptions
+### 6. Program Descriptions
   1. main.py: The entry point of this project.
   2. train.py: The major training module.
   3. test.py: The major testing module.
   4. manip.py: The manipulate module of the model.
 
-### Program Structures:
+### 7. Program Structures:
 ```text
 ----SegCaps  (Project folder)
     |
-    |-cococrawler (Crawler program folder)
+    \-cococrawler (Crawler program folder)
     |   |-annotations (Folder of Microsoft COCO annotation files)
-    |-data  (The root folder of program output)
-    |   |-imgs (Folder of training and testing images)
-    |   |-masks (Folder of training and testing masking data)
-    |   |-np_files (Folder to store processed image and mask files in numpy form.)
-    |   |-split_lists (Folder for training and testing image splits list)
-    |   |-logs (Training logs)
-    |   |-plots (Trend diagram for Training period. Only generate after the training completed )
-    |   |-figs (Conver image to numpy format, part of images stored for checking)
-    |   |-saved_models (All model weights will be stored under this folder)
-    |   |-results (Test result images will be stored in this folder)
+    \-data  (The root folder of program output)
+    |   \-imgs (Folder of training and testing images)
+    |   \-masks (Folder of training and testing masking data)
+    |   \-np_files (Folder to store processed image and mask files in numpy form.)
+    |   \-split_lists (Folder for training and testing image splits list)
+    |   \-logs (Training logs)
+    |   \-plots (Trend diagram for Training period. Only generate after the training completed )
+    |   \-figs (Conver image to numpy format, part of images stored for checking)
+    |   \-saved_models (All model weights will be stored under this folder)
+    |   \-results (Test result images will be stored in this folder)
     |
-    |-models (Reference model files: Unet and DenseNet)
+    \-models (Reference model files: Unet and DenseNet)
     |
-    |-segcapsnet (main modules for Capsule nets and SegCaps)
+    \-segcapsnet (main modules for Capsule nets and SegCaps)
     |
-    |-utils (image loader, loss functions, metrics, image augmentation, and thread safe models)
+    \-utils (image loader, loss functions, metrics, image augmentation, and thread safe models)
     |
-    |-notebook (Some experiment notebooks for reference)
+    \-notebook (Some experiment notebooks for reference)
     |
-    |-raspberrypi (A video streaming capture program integrated with SegCaps for segmentation task) 
-    |-installation (Installation shell for Raspberry Pi)
+    \-raspberrypi (A video streaming capture program integrated with SegCaps for segmentation task) 
+    \-installation (Installation shell for Raspberry Pi)
     |
-    |-imgs (image file for this readme)
+    \-imgs (image file for this readme)
 ```
 
-### Install package on Raspberry Pi 3
+### 8. Install package on Raspberry Pi 3
 ### The section is under constructing. The SegCaps model cannot fit into the memory of Raspberry Pi 3 so far.
 #### Download tensorflow pre-compile version for ARM v7.
 Tensorflow for ARM - Github Repo:
@@ -150,30 +150,52 @@ https://medium.com/@abhizcc/installing-latest-tensor-flow-and-keras-on-raspberry
 #### OpenCV installation on Raspberry Pi 3
 https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
-## TODO List:
+## 9. TODO List:
   1. Execute programs on LUNA 16 dataset. Done. Jun 11
+
     1-1. Porting program from python 2.7 to 3.6 (Jun 11)
+
     1-2. Execute manipulation function. (Jun 11)
+
     1-2. Execute test function on one image without pre-trained weight(Jun 11)
+
     1-3. Execute train function on 3 images. (Jun 12)
+
     1-4. Execute test function on trained model (Jun 12)
+
     1-5. Display original image and result mask image. (Jun 12)
+
     1-6. Identify input image mask format. (Jun 14)
+
   2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
+
     2-1. Identify COCO stuff 2017 as target dataset. (Jun 15)
+
     2-2. Download annotation files for COCO 2017. (Jun 15)
+
   3. Test existing program on color images.
+
     3-1. Generate single class mask on COCO masked image data.(Jun 13)
+
     3-2. Convert the image mask format to background=0, objects=1. (Jun 18)
+
     3-3. Convert the color image to gray scale image (Jun 18)
+
     3-3. Feed the color images with single classes mask to model for training. (Jun 21)
+
   5. Pipeline up:
+
     5-1. Modify code to support experiments.(Jun 25)
-      5-1-1. Models persistent by version with configuration and dataset.
+
+      5-1-1. Models persistent by version with configuration and dataset. (Jun 26)
+
       5-1-2. Notebook folder build up to store experiment results.
+
     5-2. Test pipeline (Jun 27)
-  4. Modify program for color images. (Jun 29)
-  6. Integrate model with webcam.
+
+  6. Modify program for color images. (Jun 29)
+
+  7. Integrate model with webcam. (Jul 5)
 
 ### Citation
 
