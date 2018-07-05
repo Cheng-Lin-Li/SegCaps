@@ -111,7 +111,7 @@ python3 main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --
 ----SegCaps  (Project folder)
     |
     \-cococrawler (Crawler program folder)
-    |   |-annotations (Folder of Microsoft COCO annotation files)
+    |   \-annotations (Folder of Microsoft COCO annotation files)
     \-data  (The root folder of program output)
     |   \-imgs (Folder of training and testing images)
     |   \-masks (Folder of training and testing masking data)
@@ -132,6 +132,7 @@ python3 main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --
     \-notebook (Some experiment notebooks for reference)
     |
     \-raspberrypi (A video streaming capture program integrated with SegCaps for segmentation task) 
+    |
     \-installation (Installation shell for Raspberry Pi)
     |
     \-imgs (image file for this readme)
@@ -183,19 +184,21 @@ https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
     3-3. Feed the color images with single classes mask to model for training. (Jun 21)
 
-  5. Pipeline up:
+  4. Pipeline up:
 
-    5-1. Modify code to support experiments.(Jun 25)
+    4-1. Modify code to support experiments.(Jun 25)
 
-      5-1-1. Models persistent by version with configuration and dataset. (Jun 26)
+      4-1-1. Models persistent by version with configuration and dataset. (Jun 26)
 
-      5-1-2. Notebook folder build up to store experiment results.
+      4-1-2. Notebook folder build up to store experiment results.
 
-    5-2. Test pipeline (Jun 27)
+    4-2. Test pipeline (Jun 27)
 
-  6. Modify program for color images. (Jun 29)
+  5. Modify program for color images. (Jun 27)
 
-  7. Integrate model with webcam. (Jul 5)
+  6. Model training (Jun 27)
+  
+  7. Integrate model with webcam. (Jul 3)
 
 ### Citation
 
