@@ -1,12 +1,15 @@
 # Capsules for Object Segmentation (SegCaps)
 ### by [Rodney LaLonde](https://rodneylalonde.wixsite.com/personal) and [Ulas Bagci](http://www.cs.ucf.edu/~bagci/)
+
 ### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/)
 ### Objectives: Build up a pipeline for Object Segmentation experiments on SegCaps with not only 3D CT images (LUNA 16) but also 2D color images (MS COCO 2017).
 
 ## This repo is the clone the implementation of SegCaps from official site with restructure and enhancements.
 
 The original paper for SegCaps can be found at https://arxiv.org/abs/1804.04241.
+
 The original source code can be found at https://github.com/lalonderodney/SegCaps
+
 Author's project page for this work can be found at https://rodneylalonde.wixsite.com/personal/research-blog/capsules-for-object-segmentation.
 
 
@@ -19,7 +22,6 @@ This repo of code is written for Keras using the TensorFlow backend.
 You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
 
 Please install all required packages before using programs.
-
 
 ```bash
 pip install -r requirements.txt
@@ -66,14 +68,27 @@ cd ..
 The repo include a crawler program to download your own class of images for training.
 But you have to download the annotation file first.
 [Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip)
-There are two JSON files contain in the zip file. Extract them into a folder. In this example is under ~/SegCaps/annotations/
+There are two JSON files contain in the zip file. Extract them into a folder. 
 
-Example: Download 10 images and mask files with 'person' class from MS COCO dataset.
+In this example the folder is under ~/SegCaps/annotations/
+
+Example 1: Download 10 images and mask files with 'person' class from MS COCO dataset.
 
 ```bash
 cd ./cococrawler
 $python3 getcoco17.py --data_root_dir ../data --category person --annotation_file ./annotations/instances_val2017.json --number 10
 ```
+
+Example 2: Download image IDs 22228, and 178040 with mask images for only person class.
+```bash
+cd ./cococrawler
+$python3 getcoco17.py --data_root_dir ../data/coco --category person --annotation_file ./annotations/instances_train2017.json  --number 10 --id 22228 178040
+```
+
+You can choose multiple classes if you want. Just specify category of each class by space. 
+
+Example: --category person dog cat
+
 
 ### 5. Train your model
 #### 5-1 Main File
@@ -87,8 +102,41 @@ python3 main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --
 ```
 ### Program Descriptions
   1. main.py: The entry point of this project.
-  2. load_3D_data.py: The data loading model.
-  
+  2. train.py: The major training module.
+  3. test.py: The major testing module.
+  4. manip.py: The manipulate module of the model.
+
+### Program Structures:
+```text
+----SegCaps  (Project folder)
+    |
+    |-cococrawler (Crawler program folder)
+    |   |-annotations (Folder of Microsoft COCO annotation files)
+    |-data  (The root folder of program output)
+    |   |-imgs (Folder of training and testing images)
+    |   |-masks (Folder of training and testing masking data)
+    |   |-np_files (Folder to store processed image and mask files in numpy form.)
+    |   |-split_lists (Folder for training and testing image splits list)
+    |   |-logs (Training logs)
+    |   |-plots (Trend diagram for Training period. Only generate after the training completed )
+    |   |-figs (Conver image to numpy format, part of images stored for checking)
+    |   |-saved_models (All model weights will be stored under this folder)
+    |   |-results (Test result images will be stored in this folder)
+    |
+    |-models (Reference model files: Unet and DenseNet)
+    |
+    |-segcapsnet (main modules for Capsule nets and SegCaps)
+    |
+    |-utils (image loader, loss functions, metrics, image augmentation, and thread safe models)
+    |
+    |-notebook (Some experiment notebooks for reference)
+    |
+    |-raspberrypi (A video streaming capture program integrated with SegCaps for segmentation task) 
+    |-installation (Installation shell for Raspberry Pi)
+    |
+    |-imgs (image file for this readme)
+```
+
 ### Install package on Raspberry Pi 3
 ### The section is under constructing. The SegCaps model cannot fit into the memory of Raspberry Pi 3 so far.
 #### Download tensorflow pre-compile version for ARM v7.
