@@ -16,7 +16,7 @@ GRAYSCALE = True
 LOGGING_FORMAT = '%(levelname)s %(asctime)s: %(message)s'
 
 
-import sys, logging
+import sys, logging, platform
 from os.path import join
 from os import makedirs
 from os import environ
@@ -72,7 +72,10 @@ def main(args):
 #     args.output_name = 'sh-' + str(args.shuffle_data) + '_a-' + str(args.aug_data)
 
     args.time = time
-
+    if platform.system() == 'Windows':
+        args.use_multiprocessing = False
+    else:
+        args.use_multiprocessing = True
     args.check_dir = join(args.data_root_dir,'saved_models', args.net)
     try:
         makedirs(args.check_dir)
