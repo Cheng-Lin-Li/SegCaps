@@ -147,13 +147,13 @@ def test(args, test_list, model_list, net_input_shape):
                     # Translate the image to 24bits grayscale by PILLOW package
                     img_data = image2float_array(img_data, 16777216-1)  #2^24=16777216
         
-                    # Reshape numpy from 2 to 3 dimensions
+                    # Reshape numpy from 2 to 3 dimensions img_data = (512, 512, 1)
                     img_data = img_data.reshape([img_data.shape[0], img_data.shape[1], 1])
                     
                 else: # RGB 3 channels treat as 3 slices.
                     img_data = np.reshape(img_data, (1, img_data.shape[0], img_data.shape[1], 4))
 
-            num_slices = img_data.shape[0]                
+            num_slices = 1               
             logging.info('\ntest.test: eval_model.predict_generator')
             _, _, generate_test_batches = get_generator(args.dataset)
             output_array = eval_model.predict_generator(generate_test_batches(args.data_root_dir, [img],
@@ -163,7 +163,8 @@ def test(args, test_list, model_list, net_input_shape):
                                                                               subSampAmt=0,
                                                                               stride=1),
                                                         steps=num_slices, max_queue_size=1, workers=1,
-                                                        use_multiprocessing=False, verbose=1)
+                                                        use_multiprocessing=args.use_multiprocessing, 
+                                                        verbose=1)
             logging.info('\ntest.test: output_array=%s'%(output_array))
             if args.net.find('caps') != -1:
                 # A list with two images [mask, recon], get mask image.#3d:
@@ -219,34 +220,37 @@ def test(args, test_list, model_list, net_input_shape):
             # Plot Qual Figure
             print('Creating Qualitative Figure for Quick Reference')
             f, ax = plt.subplots(1, 3, figsize=(15, 5))
+            
+            if args.dataset == 'mscoco17':               
+                pass
+            else: # 3D data
+                ax[0].imshow(img_data[img_data.shape[0] // 3, :, :], alpha=1, cmap='gray')
+                ax[0].imshow(output_bin[img_data.shape[0] // 3, :, :], alpha=0.5, cmap='Blues')
+                ax[0].imshow(gt_data[img_data.shape[0] // 3, :, :], alpha=0.2, cmap='Reds')
+                ax[0].set_title('Slice {}/{}'.format(img_data.shape[0] // 3, img_data.shape[0]))
+                ax[0].axis('off')
+    
+                ax[1].imshow(img_data[img_data.shape[0] // 2, :, :], alpha=1, cmap='gray')
+                ax[1].imshow(output_bin[img_data.shape[0] // 2, :, :], alpha=0.5, cmap='Blues')
+                ax[1].imshow(gt_data[img_data.shape[0] // 2, :, :], alpha=0.2, cmap='Reds')
+                ax[1].set_title('Slice {}/{}'.format(img_data.shape[0] // 2, img_data.shape[0]))
+                ax[1].axis('off')
+    
+                ax[2].imshow(img_data[img_data.shape[0] // 2 + img_data.shape[0] // 4, :, :], alpha=1, cmap='gray')
+                ax[2].imshow(output_bin[img_data.shape[0] // 2 + img_data.shape[0] // 4, :, :], alpha=0.5,
+                             cmap='Blues')
+                ax[2].imshow(gt_data[img_data.shape[0] // 2 + img_data.shape[0] // 4, :, :], alpha=0.2,
+                             cmap='Reds')
+                ax[2].set_title(
+                    'Slice {}/{}'.format(img_data.shape[0] // 2 + img_data.shape[0] // 4, img_data.shape[0]))
+                ax[2].axis('off')
 
-            ax[0].imshow(img_data[img_data.shape[0] // 3, :, :], alpha=1, cmap='gray')
-            ax[0].imshow(output_bin[img_data.shape[0] // 3, :, :], alpha=0.5, cmap='Blues')
-            ax[0].imshow(gt_data[img_data.shape[0] // 3, :, :], alpha=0.2, cmap='Reds')
-            ax[0].set_title('Slice {}/{}'.format(img_data.shape[0] // 3, img_data.shape[0]))
-            ax[0].axis('off')
-
-            ax[1].imshow(img_data[img_data.shape[0] // 2, :, :], alpha=1, cmap='gray')
-            ax[1].imshow(output_bin[img_data.shape[0] // 2, :, :], alpha=0.5, cmap='Blues')
-            ax[1].imshow(gt_data[img_data.shape[0] // 2, :, :], alpha=0.2, cmap='Reds')
-            ax[1].set_title('Slice {}/{}'.format(img_data.shape[0] // 2, img_data.shape[0]))
-            ax[1].axis('off')
-
-            ax[2].imshow(img_data[img_data.shape[0] // 2 + img_data.shape[0] // 4, :, :], alpha=1, cmap='gray')
-            ax[2].imshow(output_bin[img_data.shape[0] // 2 + img_data.shape[0] // 4, :, :], alpha=0.5,
-                         cmap='Blues')
-            ax[2].imshow(gt_data[img_data.shape[0] // 2 + img_data.shape[0] // 4, :, :], alpha=0.2,
-                         cmap='Reds')
-            ax[2].set_title(
-                'Slice {}/{}'.format(img_data.shape[0] // 2 + img_data.shape[0] // 4, img_data.shape[0]))
-            ax[2].axis('off')
-
-            fig = plt.gcf()
-            fig.suptitle(img[0][:-4])
-
-            plt.savefig(join(fig_out_dir, img[0][:-4] + '_qual_fig' + '.png'),
-                        format='png', bbox_inches='tight')
-            plt.close('all')   
+                fig = plt.gcf()
+                fig.suptitle(img[0][:-4])
+    
+                plt.savefig(join(fig_out_dir, img[0][:-4] + '_qual_fig' + '.png'),
+                            format='png', bbox_inches='tight')
+                plt.close('all')   
 
             # Compute metrics
             row = [img[0][:-4]]
