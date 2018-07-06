@@ -172,13 +172,13 @@ def train(args, train_list, val_list, u_model, net_input_shape):
         generate_train_batches(args.data_root_dir, train_list, net_input_shape, net=args.net,
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
                                stride=args.stride, shuff=args.shuffle_data, aug_data=args.aug_data),
-        max_queue_size=40, workers=4, use_multiprocessing=False,
+        max_queue_size=8, workers=4, use_multiprocessing=args.use_multiprocessing,
         steps_per_epoch=1000,
         validation_data=generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
                                              batchSize=args.batch_size,  numSlices=args.slices, subSampAmt=0,
                                              stride=args.stride, shuff=args.shuffle_data),
         validation_steps=5, # Set validation stride larger to see more of the data.
-        epochs=50,
+        epochs=20,
         callbacks=callbacks,
         verbose=1)
     # Plot the training data collected
