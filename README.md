@@ -4,7 +4,7 @@
 ### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/)
 ### Objectives: Build up a pipeline for Object Segmentation experiments on SegCaps with not only 3D CT images (LUNA 16) but also 2D color images (MS COCO 2017).
 
-## This repo is the clone the implementation of SegCaps from official site with restructure and enhancements.
+## This repository cloned from the implementation of SegCaps from official site with program restructure and enhancements.
 
 The original paper for SegCaps can be found at https://arxiv.org/abs/1804.04241.
 
@@ -95,11 +95,68 @@ Example: --category person dog cat
 
 From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
 
-#### Example command: Train SegCaps R3 on MS COCO dataset without GPU support.
+#### 5-2 Train your model:
+
+Due to the program apply KFold cross-training and testing, and K = 4 as default. If your testing image files less than 4, please indicate the number of image files you have.
+
+Example: You have only 2 images, and you indicate --Kfold 2, which means you will use 1 image file for training, and 1 image file for testing.
+
+#### Example command: Train SegCaps R3 on MS COCO dataset without GPU support. Assume you have 4 or more images.
 
 ```bash
-python3 main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --loss dice --data_root_dir=data --which_gpus=-2 --gpus=0 --dataset mscoco17 
+python3 ./main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --loss dice --data_root_dir=data --which_gpus=-2 --gpus=0 --dataset mscoco17 
 ```
+
+#### Example command: Train basic Capsule Net on MS COCO dataset with GPU support. Number of GPU = 1. K = 1 = You only train your model on one image for overfitting test.
+
+```bash
+python3 ./main.py --train=1 --test=0 --manip=0 --data_root_dir=data --net capsbasic --initial_lr 0.0001 --loglevel 2 --Kfold 1 --loss dice --dataset mscoco17 --recon_wei 20 --which_gpu -1 --gpus 1 --aug_data 0
+```
+
+#### 5-3 Test your model:
+
+Due to the program apply KFold cross-training and testing. If your testing image files less than 4, please indicate the number of image files you have.
+
+Example: You have only 2 images, and you indicate --Kfold 2, which means you will use 1 image file for training, and 1 image file for testing.
+
+#### Example command: Test SegCaps R3 on MS COCO dataset without GPU support. Your pre-trained weight file store on ./data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
+
+```bash
+python3 ./main.py --train=0 --test=1 --manip=0 --Kfold 2 --net segcapsr3 --data_root_dir=data --loglevel 2 --which_gpus=-2 --gpus=0 --dataset mscoco17 --weights_path data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
+```
+
+#### 5-4 List all parameters:
+
+Try below command to list all parameters for the main program.
+
+```bash
+python3 main.py -h
+```
+
+And the result will be:
+
+```text
+usage: main.py [-h] --data_root_dir DATA_ROOT_DIR
+               [--weights_path WEIGHTS_PATH] [--split_num SPLIT_NUM]
+               [--net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}]
+               [--train {0,1}] [--test {0,1}] [--manip {0,1}]
+               [--shuffle_data {0,1}] [--aug_data {0,1}]
+               [--loss {bce,w_bce,dice,mar,w_mar}] [--batch_size BATCH_SIZE]
+               [--initial_lr INITIAL_LR] [--recon_wei RECON_WEI]
+               [--slices SLICES] [--subsamp SUBSAMP] [--stride STRIDE]
+               [--verbose {0,1,2}] [--save_raw {0,1}] [--save_seg {0,1}]
+               [--save_prefix SAVE_PREFIX] [--thresh_level THRESH_LEVEL]
+               [--compute_dice COMPUTE_DICE]
+               [--compute_jaccard COMPUTE_JACCARD]
+               [--compute_assd COMPUTE_ASSD] [--which_gpus WHICH_GPUS]
+               [--gpus GPUS] [--dataset {luna16,mscoco17}]
+               [--num_class NUM_CLASS] [--Kfold KFOLD] [--retrain {0,1}]
+               [--loglevel LOGLEVEL]
+main.py: error: the following arguments are required: --data_root_dir
+
+```
+
+
 ### 6. Program Descriptions
   1. main.py: The entry point of this project.
   2. train.py: The major training module.
