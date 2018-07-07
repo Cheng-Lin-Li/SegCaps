@@ -52,6 +52,8 @@ Below commands:
 
   3-2. Create imgs and masks folders for image and mask files. 
 
+  3-3. If you would like to leverage the data folder which come from this repo, then you may no need to do below actions.
+
 ```bash
 mkdir data
 chmod 755 data
@@ -293,7 +295,7 @@ Example: Run the model segcapsr3 with pre-trained weight file without GPU at ./d
 python3 gen_mask.py --weights_path data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5 --which_gpus=-2 --gpus=0 --net segcapsr3
 ```
 
-This is the test result based on the pre-trained weight files 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5' I included in the github.
+This is the test result based on the pre-trained weight files 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5' which I included in the github.
 
 <img src="imgs/webcam.png" width="900px"/>
 
@@ -370,21 +372,21 @@ optional arguments:
     \-imgs (image file for this readme)
 ```
 
-### 8. Install package on Raspberry Pi 3
-### The section is under constructing. The SegCaps model cannot fit into the memory of Raspberry Pi 3 so far.
+### 8. Install package on Raspberry Pi 2/3
+### The section is under constructing. The SegCaps R3 model cannot fit into the memory of Raspberry Pi 2/3 so far.
 #### Download tensorflow pre-compile version for ARM v7.
 Tensorflow for ARM - Github Repo:
 https://github.com/lhelontra/tensorflow-on-arm/releases
 
-installation instruction.
+installation instructions.
 
 https://medium.com/@abhizcc/installing-latest-tensor-flow-and-keras-on-raspberry-pi-aac7dbf95f2
 
-#### OpenCV installation on Raspberry Pi 3
+#### OpenCV installation on Raspberry Pi 2/3
 https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
 ## 9. TODO List:
-  1. Execute programs on LUNA 16 dataset. Done. Jun 11
+  1. Execute programs on LUNA 16 dataset. =>Completed
 
     1-1. Porting program from python 2.7 to 3.6 (Jun 11)
 
@@ -400,13 +402,13 @@ https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
     1-6. Identify input image mask format. (Jun 14)
 
-  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. Done. 6/12 COCO 2017
+  2. Find right dataset for person/cat/dog segmentation. Candidate dataset is MS COCO. =>Completed
 
     2-1. Identify COCO stuff 2017 as target dataset. (Jun 15)
 
     2-2. Download annotation files for COCO 2017. (Jun 15)
 
-  3. Test existing program on color images.
+  3. Test existing program on color images.=>Completed
 
     3-1. Generate single class mask on COCO masked image data.(Jun 13)
 
@@ -416,7 +418,7 @@ https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
     3-3. Feed the color images with single classes mask to model for training. (Jun 21)
 
-  4. Pipeline up:
+  4. Pipeline up:=>Completed
 
     4-1. Modify code to support experiments.(Jun 25)
 
@@ -426,11 +428,16 @@ https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
 
     4-2. Test pipeline (Jun 27)
 
-  5. Modify program for color images. (Jun 27)
+  5. Modify program for color images. =>Completed
 
-  6. Model training (Jun 27)
+  6. Model training =>Completed
+    6-1. Enhance MSCOCO crawler to download image by IDs with specific class of image masking file. (Jul 28)
   
-  7. Integrate model with webcam. (Jul 3)
+  7. Integrate model with webcam. =>Completed
+
+  8. Reduce the model size to fit into Raspberry memory (1GB)
+
+
 
 ### Citation
 
