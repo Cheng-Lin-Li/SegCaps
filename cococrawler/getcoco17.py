@@ -118,16 +118,28 @@ def main(args):
  
     # initialize COCO API for instance annotations
     coco=COCO(annFile)
-     
+    
     # get all images containing given categories, select one at random
     catIds = coco.getCatIds(catNms=category_list);
  
-    # Get image id list from categories.
-    imgIds = coco.getImgIds(catIds=catIds );
-    print('Image Generating...')
+    if args.id is not None:
+        imgIds = list(args.id)
+        num = len(imgIds)
+    else: 
+        # Get image id list from categories.
+        imgIds = coco.getImgIds(catIds=catIds );
+    
+    print('\nImage Generating...')
     for i in tqdm(range(num)):
-        img = coco.loadImgs(imgIds[np.random.randint(0,len(imgIds))])[0]
-     
+        try:
+            if args.id is not None:
+                img = coco.loadImgs(imgIds[i])[0]
+            else:
+                img = coco.loadImgs(imgIds[np.random.randint(0,len(imgIds))])[0]
+        except Exception as e:
+            print('\nError: Image ID: %s cannot be found in the annotation file.'%(e))
+            continue
+        
         # use url to load image
         I = io.imread(img['coco_url'])
         resolution = args.resolution
@@ -155,7 +167,7 @@ def main(args):
         file_name = join(output_mask_path, FILE_MIDDLE_NAME+str(i) + '.png')
         plt.imsave(file_name, mask)
          
-    print('Image Generation Complete !')
+    print('\nProgram finished !')
     return True
 
 if __name__ == '__main__':
@@ -175,7 +187,9 @@ if __name__ == '__main__':
     parser.add_argument('--resolution', type = int, default = 0,
                         help='The resolution of images you want to transfer. It will be a square image.'
                         'Default is 0. resolution = 0 will keep original image resolution')
-    
+    parser.add_argument('--id', nargs = '+', type=int,
+                        help='The id of images you want to download from MS COCO dataset.'
+                        'Number of images is equal to the number of ids. Masking will base on category.')    
     parser.add_argument('--number', type = int, default = 10,
                         help='The total number of images you want to download.')    
 
