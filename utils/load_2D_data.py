@@ -305,7 +305,7 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
             scan_name = scan_name[0]
             path_to_np = join(root_path,'np_files',basename(scan_name)[:-3]+'npz')
             with np.load(path_to_np) as data:
-                test_img = data['img']
+                test_img = data['img'] # (512, 512, 1)
         except:
             logging.info('\nPre-made numpy array not found for {}.\nCreating now...'.format(scan_name[:-4]))
             test_img = convert_data_to_numpy(root_path, scan_name, no_masks=True)
@@ -316,7 +316,8 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
 
         indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
         for j in indicies:
-            if img_batch.ndim == 4:
+            if img_batch.ndim == 4: 
+                # (1, 512, 512, 1)
                 img_batch[count, :, :, :] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
             elif img_batch.ndim == 5:
                 # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
@@ -328,7 +329,7 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
             count += 1
             if count % batchSize == 0:
                 count = 0
-                yield (img_batch)
+                yield (img_batch) 
 
     if count != 0:
         yield (img_batch[:count,:,:,:])
@@ -342,8 +343,6 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
     '''
     # Create placeholders for testing
     logging.info('\nload_2D_data.generate_test_image')
-    img_batch = np.zeros((np.concatenate(((batchSize,), net_input_shape))), dtype=np.float32)
-    count = 0
 
     #######
     if GRAYSCALE == True:
@@ -364,23 +363,5 @@ def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, sub
         test_img = np.reshape(test_img, (1, test_img.shape[0], test_img.shape[1], 4))
         test_img = test_img[:,:,:,:3]
         
-#     indicies = np.arange(0, test_img.shape[2] - numSlices * (subSampAmt + 1) + 1, stride)
-#     for j in indicies:
-#         if img_batch.ndim == 4:
-#             img_batch[count, :, :, :] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
-#         elif img_batch.ndim == 5:
-#             # Assumes img and mask are single channel. Replace 0 with : if multi-channel.
-#             img_batch[count, :, :, :, 0] = test_img[:, :, j:j + numSlices * (subSampAmt+1):subSampAmt+1]
-#         else:
-#             logging.error('\nError this function currently only supports 2D and 3D data.')
-#             exit(0)
-# 
-#         count += 1
-#         if count % batchSize == 0:
-#             count = 0
-#             yield (img_batch)
-# 
-#     if count != 0:
-#         yield (img_batch[:count,:,:,:])
     yield (test_img)
        
