@@ -130,7 +130,7 @@ def loglevel(level=0):
         return logging.NOTSET        
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train on Medical Data')
+    parser = argparse.ArgumentParser(description='Train on Medical Data or MS COCO dataset')
     parser.add_argument('--data_root_dir', type = str, required = True,
                         help = 'The root directory for your data.')
     parser.add_argument('--weights_path', type = str, default = '',

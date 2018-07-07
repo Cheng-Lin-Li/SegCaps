@@ -15,6 +15,12 @@ Author's project page for this work can be found at https://rodneylalonde.wixsit
 
 ## Getting Started Guide
 
+This is my experiment to test SegCaps Net R3.
+I try to overfit on one single image then test the orientation capability of the model. 
+<img src="imgs/overfit-test.png" width="900px"/>
+Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5'
+
+
 The program was modified to support python 3.6 on Ubuntu 18.04 and Windows 10.
 
 ### 1. Install Required Packages on Ubuntu / Windows
@@ -90,10 +96,50 @@ You can choose multiple classes if you want. Just specify category of each class
 Example: --category person dog cat
 
 
+Try below command to list all parameters for the crawler program.
+
+```bash
+python3 getcoco17.py -h
+```
+
+```bash
+usage: getcoco17.py [-h] [--data_root_dir DATA_ROOT_DIR]
+                    [--category CATEGORY [CATEGORY ...]]
+                    [--annotation_file ANNOTATION_FILE]
+                    [--resolution RESOLUTION] [--id ID [ID ...]]
+                    [--number NUMBER]
+
+Download COCO 2017 image Data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_root_dir DATA_ROOT_DIR
+                        The root directory for your data.
+  --category CATEGORY [CATEGORY ...]
+                        MS COCO object categories list (--category person dog
+                        cat). default value is person
+  --annotation_file ANNOTATION_FILE
+                        The annotation json file directory of MS COCO object
+                        categories list. file name should be
+                        instances_val2017.json
+  --resolution RESOLUTION
+                        The resolution of images you want to transfer. It will
+                        be a square image.Default is 0. resolution = 0 will
+                        keep original image resolution
+  --id ID [ID ...]      The id of images you want to download from MS COCO
+                        dataset.Number of images is equal to the number of
+                        ids. Masking will base on category.
+  --number NUMBER       The total number of images you want to download.
+```
+
+
 ### 5. Train your model
 #### 5-1 Main File
 
 From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
+
+
+Due to the program will convert all image files into numpy format then store training/testing images into ./data/np_files and training ( and testing) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files. The program will only read data from np_files folders.
 
 #### 5-2 Train your model:
 
@@ -116,6 +162,8 @@ python3 ./main.py --train=1 --test=0 --manip=0 --data_root_dir=data --net capsba
 #### 5-3 Test your model:
 
 Due to the program apply KFold cross-training and testing. If your testing image files less than 4, please indicate the number of image files you have.
+
+Again, the program will convert all image files into numpy format and store training/testing images into ./data/np_files and testing (and training) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files.  The program will only read data from np_files folders.
 
 Example: You have only 2 images, and you indicate --Kfold 2, which means you will use 1 image file for training, and 1 image file for testing.
 
@@ -152,8 +200,136 @@ usage: main.py [-h] --data_root_dir DATA_ROOT_DIR
                [--gpus GPUS] [--dataset {luna16,mscoco17}]
                [--num_class NUM_CLASS] [--Kfold KFOLD] [--retrain {0,1}]
                [--loglevel LOGLEVEL]
-main.py: error: the following arguments are required: --data_root_dir
 
+Train on Medical Data or MS COCO dataset
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_root_dir DATA_ROOT_DIR
+                        The root directory for your data.
+  --weights_path WEIGHTS_PATH
+                        /path/to/trained_model.hdf5 from root. Set to "" for
+                        none.
+  --split_num SPLIT_NUM
+                        Which training split to train/test on.
+  --net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}
+                        Choose your network.
+  --train {0,1}         Set to 1 to enable training.
+  --test {0,1}          Set to 1 to enable testing.
+  --manip {0,1}         Set to 1 to enable manipulation.
+  --shuffle_data {0,1}  Whether or not to shuffle the training data (both per
+                        epoch and in slice order.
+  --aug_data {0,1}      Whether or not to use data augmentation during
+                        training.
+  --loss {bce,w_bce,dice,mar,w_mar}
+                        Which loss to use. "bce" and "w_bce": unweighted and
+                        weighted binary cross entropy"dice": soft dice
+                        coefficient, "mar" and "w_mar": unweighted and
+                        weighted margin loss.
+  --batch_size BATCH_SIZE
+                        Batch size for training/testing.
+  --initial_lr INITIAL_LR
+                        Initial learning rate for Adam.
+  --recon_wei RECON_WEI
+                        If using capsnet: The coefficient (weighting) for the
+                        loss of decoder
+  --slices SLICES       Number of slices to include for training/testing.
+  --subsamp SUBSAMP     Number of slices to skip when forming 3D samples for
+                        training. Enter -1 for random subsampling up to 5% of
+                        total slices.
+  --stride STRIDE       Number of slices to move when generating the next
+                        sample.
+  --verbose {0,1,2}     Set the verbose value for training. 0: Silent, 1: per
+                        iteration, 2: per epoch.
+  --save_raw {0,1}      Enter 0 to not save, 1 to save.
+  --save_seg {0,1}      Enter 0 to not save, 1 to save.
+  --save_prefix SAVE_PREFIX
+                        Prefix to append to saved CSV.
+  --thresh_level THRESH_LEVEL
+                        Enter 0.0 for otsu thresholding, else set value
+  --compute_dice COMPUTE_DICE
+                        0 or 1
+  --compute_jaccard COMPUTE_JACCARD
+                        0 or 1
+  --compute_assd COMPUTE_ASSD
+                        0 or 1
+  --which_gpus WHICH_GPUS
+                        Enter "-2" for CPU only, "-1" for all GPUs available,
+                        or a comma separated list of GPU id numbers ex:
+                        "0,1,4".
+  --gpus GPUS           Number of GPUs you have available for training. If
+                        entering specific GPU ids under the --which_gpus arg
+                        or if using CPU, then this number will be inferred,
+                        else this argument must be included.
+  --dataset {luna16,mscoco17}
+                        Enter "mscoco17" for COCO dataset, "luna16" for CT
+                        images
+  --num_class NUM_CLASS
+                        Number of classes to segment. Default is 2. If number
+                        of classes > 2, the loss function will be softmax
+                        entropy and only apply on SegCapsR3** Current version
+                        only support binary classification tasks.
+  --Kfold KFOLD         Define K value for K-fold cross validate default K =
+                        4, K = 1 for over-fitting test
+  --retrain {0,1}       Retrain your model based on existing weights. default
+                        0 = train your model from scratch, 1 = retrain
+                        existing model. The weights file location of the model
+                        has to be provided by --weights_path parameter
+  --loglevel LOGLEVEL   loglevel 3 = debug, 2 = info, 1 = warning, 4 = error,
+                        > 4 =critical
+
+```
+
+#### 5-5 Test your model on video stream:
+
+Please note the segcapsr3 model still too big to load into the memory of Raspberry Pi R2/R3.
+This program can be only executed on your laptop/desktop with webcam.
+
+The segmentation task on segcapsr3 will take 45~50 seconds in a laptop without GPU support. The capsbasic net will take around 20 seconds. Although the program support 'ESC' or 'q' key press to terminate, you may need to terminate the console to close the program due to the latency of model inference time.
+
+Example: Run the model segcapsr3 with pre-trained weight file without GPU at ./data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5
+
+```bash
+python3 gen_mask.py --weights_path data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5 --which_gpus=-2 --gpus=0 --net segcapsr3
+```
+
+This is the test result based on the pre-trained weight files 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5' I included in the github.
+
+<img src="imgs/webcam.png" width="900px"/>
+
+Try below command to list all parameters for the main program.
+
+```bash
+python3 gen_mask.py -h
+```
+
+```bash
+usage: gen_mask.py [-h] [--net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}]
+                   --weights_path WEIGHTS_PATH [--num_class NUM_CLASS]
+                   [--which_gpus WHICH_GPUS] [--gpus GPUS]
+
+Mask image by segmentation algorithm
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}
+                        Choose your network.
+  --weights_path WEIGHTS_PATH
+                        /path/to/trained_model.hdf5 from root. Set to "" for
+                        none.
+  --num_class NUM_CLASS
+                        Number of classes to segment. Default is 2. If number
+                        of classes > 2, the loss function will be softmax
+                        entropy and only apply on SegCapsR3** Current version
+                        only support binary classification tasks.
+  --which_gpus WHICH_GPUS
+                        Enter "-2" for CPU only, "-1" for all GPUs available,
+                        or a comma separated list of GPU id numbers ex:
+                        "0,1,4".
+  --gpus GPUS           Number of GPUs you have available for training. If
+                        entering specific GPU ids under the --which_gpus arg
+                        or if using CPU, then this number will be inferred,
+                        else this argument must be included.
 ```
 
 
@@ -162,6 +338,7 @@ main.py: error: the following arguments are required: --data_root_dir
   2. train.py: The major training module.
   3. test.py: The major testing module.
   4. manip.py: The manipulate module of the model.
+  5. gen_mask.py: A video streaming capture program integrated with SegCaps for segmentation task
 
 ### 7. Program Structures:
 ```text
@@ -188,9 +365,7 @@ main.py: error: the following arguments are required: --data_root_dir
     |
     \-notebook (Some experiment notebooks for reference)
     |
-    \-raspberrypi (A video streaming capture program integrated with SegCaps for segmentation task) 
-    |
-    \-installation (Installation shell for Raspberry Pi)
+    \-raspberrypi (Raspberry Pi software installation scripts) 
     |
     \-imgs (image file for this readme)
 ```
