@@ -106,9 +106,7 @@ venv.bak/
 # SegCaps
 data/evaluationScript
 data/figs/
-data/imgs/
 data/logs/
-data/masks/
 data/np_files/
 data/plots/
 data/results/
