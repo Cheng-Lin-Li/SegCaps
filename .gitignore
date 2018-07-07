@@ -103,12 +103,17 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Eclipse project file
+.pydevproject
+.project
+
 # SegCaps
 data/evaluationScript
 data/figs/
+data/imgs/
 data/logs/
+data/masks/
 data/np_files/
 data/plots/
 data/results/
 reference/
-cococrawler/annotations/
