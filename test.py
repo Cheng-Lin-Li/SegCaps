@@ -162,7 +162,7 @@ def test(args, test_list, model_list, net_input_shape):
                                                                               numSlices=args.slices,
                                                                               subSampAmt=0,
                                                                               stride=1),
-                                                        steps=num_slices, max_queue_size=1, workers=1,
+                                                        steps=num_slices, max_queue_size=1, workers=4,
                                                         use_multiprocessing=args.use_multiprocessing, 
                                                         verbose=1)
             logging.info('\ntest.test: output_array=%s'%(output_array))
