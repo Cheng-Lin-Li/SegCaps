@@ -431,7 +431,7 @@ https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
   5. Modify program for color images. =>Completed
 
   6. Model training =>Completed
-    6-1. Enhance MSCOCO crawler to download image by IDs with specific class of image masking file. (Jul 28)
+    6-1. Enhance MSCOCO crawler to download image by IDs with specific class of image masking file. (Jun 28)
   
   7. Integrate model with webcam. =>Completed
 
