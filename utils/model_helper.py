@@ -9,7 +9,7 @@ This is a helper file for choosing which model to create.
 '''
 import tensorflow as tf
 
-def create_model(args, input_shape):
+def create_model(args, input_shape, enable_decoder=True):
     # If using CPU or single GPU
     if args.gpus <= 1:
         if args.net == 'unet':
@@ -26,7 +26,7 @@ def create_model(args, input_shape):
             return model_list
         elif args.net == 'segcapsr3':
             from segcapsnet.capsnet import CapsNetR3
-            model_list = CapsNetR3(input_shape, args.num_class)
+            model_list = CapsNetR3(input_shape, args.num_class, enable_decoder)
             return model_list
         elif args.net == 'capsbasic':
             from segcapsnet.capsnet import CapsNetBasic
@@ -51,7 +51,7 @@ def create_model(args, input_shape):
                 return model_list
             elif args.net == 'segcapsr3':
                 from segcapsnet.capsnet import CapsNetR3
-                model_list = CapsNetR3(input_shape, args.num_class)
+                model_list = CapsNetR3(input_shape, args.num_class, enable_decoder)
                 return model_list
             elif args.net == 'capsbasic':
                 from segcapsnet.capsnet import CapsNetBasic
