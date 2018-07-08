@@ -30,15 +30,10 @@ https://github.com/jrosebr1/imutils/blob/master/imutils/video/webcamvideostream.
 
 '''
 from threading import Thread
-import os, argparse, logging, time
-from os import path
+import argparse
 from os.path import join
 import numpy as np
-import scipy.ndimage.morphology
-from skimage import measure, filters
-import matplotlib.pyplot as plt
 import sys
-from Cython.Compiler.PyrexTypes import cap_length
 # Add the ptdraft folder path to the sys.path list
 sys.path.append('../')
 from utils.model_helper import create_model
@@ -46,6 +41,7 @@ from utils.model_helper import create_model
 # from data_helper import *
 from utils.load_2D_data import generate_test_image
 from utils.custom_data_aug import image_resize2square
+from test import threshold_mask
 from datetime import datetime
 import cv2
 
@@ -143,42 +139,6 @@ def apply_mask(image, mask):
     return image
 
 
-def threshold_mask(raw_output, threshold): #raw_output 3d:(119, 512, 512)
-    '''
-    Refine the masking by Otsu method if no threshold assign.
-    '''
-    if threshold == 0:
-        try:
-            threshold = filters.threshold_otsu(raw_output)
-        except:
-            threshold = 0.5
-
-    logging.info('\tThreshold: {}'.format(threshold))
-
-    raw_output[raw_output > threshold] = 1
-    raw_output[raw_output < 1] = 0
-
-    #all_labels 3d:(119, 512, 512)
-    all_labels = measure.label(raw_output)
-    # props 3d: region of props=>list(_RegionProperties:<skimage.measure._regionprops._RegionProperties object>) 
-    # with bbox. 
-    props = measure.regionprops(all_labels) 
-    props.sort(key=lambda x: x.area, reverse=True)
-    thresholded_mask = np.zeros(raw_output.shape)
-
-    if len(props) >= 2:
-        # if the largest is way larger than the second largest
-        if props[0].area / props[1].area > 5:  
-            thresholded_mask[all_labels == props[0].label] = 1  # only turn on the largest component
-        else:
-            thresholded_mask[all_labels == props[0].label] = 1  # turn on two largest components
-            thresholded_mask[all_labels == props[1].label] = 1
-    elif len(props):
-        thresholded_mask[all_labels == props[0].label] = 1
-    # threshold_mask: 3d=(119, 512, 512)
-    thresholded_mask = scipy.ndimage.morphology.binary_fill_holes(thresholded_mask).astype(np.uint8)
-        
-    return thresholded_mask, props[0]
 
 class segmentation_model():
     '''
@@ -190,11 +150,11 @@ class segmentation_model():
         '''
         self.net_input_shape = net_input_shape
         weights_path = join(args.weights_path)
-        # Create model object in inference mode.
-        _, eval_model, _ = create_model(args, net_input_shape) 
+        # Create model object in inference mode but Disable decoder layer.
+        _, eval_model, _ = create_model(args, net_input_shape, enable_decoder = False) 
     
-        # Load weights trained on MS-COCO
-        eval_model.load_weights(weights_path)
+        # Load weights trained on MS-COCO by name because part of output layers are disable.
+        eval_model.load_weights(weights_path, by_name=True)
         self.model = eval_model
                
         
@@ -211,9 +171,9 @@ class segmentation_model():
                                                                           stride=1),
                                                     steps=1, max_queue_size=1, workers=4,
                                                     use_multiprocessing=False, verbose=1)
-            output = output_array[0][:,:,:,0]
+            output = output_array[:,:,:,0]
             threshold_level = 0
-            output_bin, props = threshold_mask(output, threshold_level)      
+            output_bin = threshold_mask(output, threshold_level)      
         r['masks'] = output_bin[0,:,:]
         
         # If you want to test the masking without prediction, mark out above line and unmark below line.
