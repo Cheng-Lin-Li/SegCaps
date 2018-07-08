@@ -192,7 +192,8 @@ usage: main.py [-h] --data_root_dir DATA_ROOT_DIR
                [--train {0,1}] [--test {0,1}] [--manip {0,1}]
                [--shuffle_data {0,1}] [--aug_data {0,1}]
                [--loss {bce,w_bce,dice,mar,w_mar}] [--batch_size BATCH_SIZE]
-               [--initial_lr INITIAL_LR] [--recon_wei RECON_WEI]
+               [--initial_lr INITIAL_LR] [--steps_per_epoch STEPS_PER_EPOCH]
+               [--epochs EPOCHS] [--patience PATIENCE] [--recon_wei RECON_WEI]
                [--slices SLICES] [--subsamp SUBSAMP] [--stride STRIDE]
                [--verbose {0,1,2}] [--save_raw {0,1}] [--save_seg {0,1}]
                [--save_prefix SAVE_PREFIX] [--thresh_level THRESH_LEVEL]
@@ -232,6 +233,13 @@ optional arguments:
                         Batch size for training/testing.
   --initial_lr INITIAL_LR
                         Initial learning rate for Adam.
+  --steps_per_epoch STEPS_PER_EPOCH
+                        Number of iterations in an epoch.
+  --epochs EPOCHS       Number of epochs for training.
+  --patience PATIENCE   Number of patience indicates the criteria of early
+                        stop training.If score of metrics do not improve
+                        during the patience of epochs, the training will be
+                        stopped.
   --recon_wei RECON_WEI
                         If using capsnet: The coefficient (weighting) for the
                         loss of decoder
@@ -248,7 +256,9 @@ optional arguments:
   --save_prefix SAVE_PREFIX
                         Prefix to append to saved CSV.
   --thresh_level THRESH_LEVEL
-                        Enter 0.0 for otsu thresholding, else set value
+                        Enter 0.0 for masking refine by Otsu algorithm. Or set
+                        a value for thresholding level of masking. Value
+                        should between 0 and 1.
   --compute_dice COMPUTE_DICE
                         0 or 1
   --compute_jaccard COMPUTE_JACCARD

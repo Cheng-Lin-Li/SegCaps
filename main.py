@@ -162,6 +162,14 @@ if __name__ == '__main__':
                         help = 'Batch size for training/testing.')
     parser.add_argument('--initial_lr', type = float, default = 0.00001,
                         help = 'Initial learning rate for Adam.')
+    parser.add_argument('--steps_per_epoch', type = int, default = 1000,
+                        help = 'Number of iterations in an epoch.')
+    parser.add_argument('--epochs', type = int, default = 20,
+                        help = 'Number of epochs for training.')
+    parser.add_argument('--patience', type = int, default = 10,
+                        help = 'Number of patience indicates the criteria of early stop training.'
+                        'If score of metrics do not improve during the patience of epochs,'
+                        ' the training will be stopped.')            
     parser.add_argument('--recon_wei', type = float, default = 131.072,
                         help = "If using capsnet: The coefficient (weighting) for the loss of decoder")
     parser.add_argument('--slices', type = int, default = 1,
@@ -180,7 +188,8 @@ if __name__ == '__main__':
     parser.add_argument('--save_prefix', type = str, default = '',
                         help = 'Prefix to append to saved CSV.')
     parser.add_argument('--thresh_level', type = float, default = 0.,
-                        help = 'Enter 0.0 for otsu thresholding, else set value')
+                        help = 'Enter 0.0 for masking refine by Otsu algorithm.'
+                        ' Or set a value for thresholding level of masking. Value should between 0 and 1.')
     parser.add_argument('--compute_dice', type = int, default = 1,
                         help = '0 or 1')
     parser.add_argument('--compute_jaccard', type = int, default = 1,
