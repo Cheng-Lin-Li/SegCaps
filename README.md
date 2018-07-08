@@ -384,6 +384,9 @@ optional arguments:
 
 ### 8. Install package on Raspberry Pi 2/3
 ### The section is under constructing. The SegCaps R3 model cannot fit into the memory of Raspberry Pi 2/3 so far.
+
+Below description just for you to install your Raspberry Pi environment ready for your own model.
+
 #### Download tensorflow pre-compile version for ARM v7.
 Tensorflow for ARM - Github Repo:
 https://github.com/lhelontra/tensorflow-on-arm/releases
@@ -394,6 +397,28 @@ https://medium.com/@abhizcc/installing-latest-tensor-flow-and-keras-on-raspberry
 
 #### OpenCV installation on Raspberry Pi 2/3
 https://www.alatortsev.com/2018/04/27/installing-opencv-on-raspberry-pi-3-b/
+
+There are two scripts under ./raspberrypi/
+You can follow below steps to speed up the installation.
+The while installation will take a very long time. It runs arround 1 day in the Raspberry Pi 2.
+
+*** Please noted these scripts only tested on Raspberry Pi 2. But it should work on Pi 3***
+
+```bash
+cd ~/SegCaps/raspberrypi
+chmod 755 *
+./Raspi3-install.sh
+```
+
+Raspberry will reboot after the installation.
+
+Execute second command.
+
+```bash
+cd ~/SegCaps/raspberrypi
+./opencv-install.sh
+```
+
 
 ## 9. TODO List:
   1. Execute programs on LUNA 16 dataset. =>Completed
