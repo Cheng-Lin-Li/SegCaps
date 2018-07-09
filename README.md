@@ -1,3 +1,4 @@
+
 # Capsules for Object Segmentation (SegCaps)
 ### by [Rodney LaLonde](https://rodneylalonde.wixsite.com/personal) and [Ulas Bagci](http://www.cs.ucf.edu/~bagci/)
 
@@ -16,7 +17,7 @@ Author's project page for this work can be found at https://rodneylalonde.wixsit
 ## Getting Started Guide
 
 This is my experiment to test SegCaps Net R3.
-I try to overfit on one single image then test the orientation capability of the model. 
+I overfit on a single image, then tested how the modeled performed as the image orientation was changed. 
 <img src="imgs/overfit-test.png" width="900px"/>
 Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5'
 
@@ -24,7 +25,7 @@ Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuf
 The program was modified to support python 3.6 on Ubuntu 18.04 and Windows 10.
 
 ### 1. Install Required Packages on Ubuntu / Windows
-This repo of code is written for Keras using the TensorFlow backend. 
+This code is written for Keras using the TensorFlow backend. 
 You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
 
 Please install all required packages before using programs.
@@ -33,10 +34,11 @@ Please install all required packages before using programs.
 pip install -r requirements.txt
 ```
 ### You may need to install additional library in Ubuntu version 17 or above version.
-Following steps will resolve below issue.
+If you get the following error:
 ```text
 ImportError: libjasper.so.1: cannot open shared object file: No such file or directory
 ```
+These steps will resolve it:
 ```bash
 sudo apt-get update
 sudo apt-get install libjasper-dev
@@ -50,9 +52,9 @@ Below commands:
 
   3-1. Create root folder name 'data' in the repo folder. All models, results, etc. are saved to this root directory.
 
-  3-2. Create imgs and masks folders for image and mask files. 
+  3-2. Create 'imgs' and 'masks' folders for image and mask files. 
 
-  3-3. If you would like to leverage the data folder which come from this repo, then you may no need to do below actions.
+  3-3. If you would like to leverage the data folder which come from this repo, then leave the repo as is.
 
 ```bash
 mkdir data
@@ -138,14 +140,14 @@ optional arguments:
 ### 5. Train your model
 #### 5-1 Main File
 
-From the main file (main.py) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
+From the main file (`main.py`) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
 
 
-Due to the program will convert all image files into numpy format then store training/testing images into ./data/np_files and training ( and testing) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files. The program will only read data from np_files folders.
+The program will convert all image files into numpy format then store training/testing images into ./data/np_files and training (and testing) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files. The program will only read data from np_files folders.
 
 #### 5-2 Train your model:
 
-Due to the program apply KFold cross-training and testing, and K = 4 as default. If your testing image files less than 4, please indicate the number of image files you have.
+The program uses KFold cross-training and testing, and K = 4 as default. If your testing image files less than 4, please indicate the number of image files you have.
 
 Example: You have only 2 images, and you indicate --Kfold 2, which means you will use 1 image file for training, and 1 image file for testing.
 
@@ -163,7 +165,8 @@ python3 ./main.py --train=1 --test=0 --manip=0 --data_root_dir=data --net capsba
 
 #### 5-3 Test your model:
 
-Due to the program apply KFold cross-training and testing. If your testing image files less than 4, please indicate the number of image files you have.
+For testing you will also have to specify the number of Kfolds as above if you
+have fewer than 4 images.
 
 Again, the program will convert all image files into numpy format and store training/testing images into ./data/np_files and testing (and training) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files.  The program will only read data from np_files folders.
 
@@ -294,7 +297,7 @@ optional arguments:
 
 #### 5-5 Test your model on video stream:
 
-Please note the segcapsr3 model still too big to load into the memory of Raspberry Pi R2/R3.
+Please note the segcapsr3 model is too big to load into the memory of Raspberry Pi R2/R3.
 This program can be only executed on your laptop/desktop with webcam.
 
 The segmentation task on segcapsr3 will take 45~50 seconds in a laptop without GPU support. The capsbasic net will take around 20 seconds. Although the program support 'ESC' or 'q' key press to terminate, you may need to terminate the console to close the program due to the latency of model inference time.
@@ -385,7 +388,7 @@ optional arguments:
 ### 8. Install package on Raspberry Pi 2/3
 ### The section is under constructing. The SegCaps R3 model cannot fit into the memory of Raspberry Pi 2/3 so far.
 
-Below description just for you to install your Raspberry Pi environment ready for your own model.
+The below description is for installing onto your Raspberry Pi environment.
 
 #### Download tensorflow pre-compile version for ARM v7.
 Tensorflow for ARM - Github Repo:
