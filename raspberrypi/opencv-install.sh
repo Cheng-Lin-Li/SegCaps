@@ -32,8 +32,6 @@ sudo make install
 sudo ldconfig
 sudo apt-get update
 
-cd /usr/local/lib/python3.5/site-packages/
-sudo mv cv2.cpython-35m-arm-linux-gnueabihf.so cv2.so
 python -c "import cv2 as cv2; print(cv2.__version__)"
 
 
