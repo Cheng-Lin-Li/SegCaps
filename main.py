@@ -100,17 +100,17 @@ def main(args):
     except:
         pass
 
-    if args.train:
+    if args.train == True:
         from train import train
         # Run training
         train(args, train_list, val_list, model_list[0], net_input_shape)
 
-    if args.test:
+    if args.test == True:
         from test import test
         # Run testing
         test(args, test_list, model_list, net_input_shape)
 
-    if args.manip:
+    if args.manip == True:
         from manip import manip
         # Run manipulation of segcaps
         manip(args, test_list, model_list, net_input_shape)
@@ -140,12 +140,12 @@ if __name__ == '__main__':
     parser.add_argument('--net', type = str.lower, default = 'segcapsr3',
                         choices = ['segcapsr3', 'segcapsr1', 'capsbasic', 'unet', 'tiramisu'],
                         help = 'Choose your network.')
-    parser.add_argument('--train', type = int, default = 1, choices = [0,1],
-                        help = 'Set to 1 to enable training.')
-    parser.add_argument('--test', type = int, default = 1, choices = [0,1],
-                        help = 'Set to 1 to enable testing.')
-    parser.add_argument('--manip', type = int, default = 1, choices = [0,1],
-                        help = 'Set to 1 to enable manipulation.')
+    parser.add_argument('--train', action='store_true',
+                        help = 'Add this flag to enable training.')
+    parser.add_argument('--test', action='store_true',
+                        help = 'Add this flag to enable testing.')
+    parser.add_argument('--manip', action='store_true',
+                        help = 'Add this flag to enable manipulation.')    
     parser.add_argument('--shuffle_data', type = int, default = 1, choices = [0,1],
                         help = 'Whether or not to shuffle the training data (both per epoch and in slice order.')
     parser.add_argument('--aug_data', type = int, default = 1, choices = [0,1],

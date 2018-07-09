@@ -140,7 +140,7 @@ optional arguments:
 ### 5. Train your model
 #### 5-1 Main File
 
-From the main file (`main.py`) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to 0 or 1 to turn these off or on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your *imgs* and *masks* folders. There are many more arguments that can be set and these are all explained in the main.py file. 
+From the main file (`main.py`) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to turn these on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your 'imgs' and 'masks' folders. There are many more arguments that can be set and these are all explained in the main.py file. 
 
 
 The program will convert all image files into numpy format then store training/testing images into ./data/np_files and training (and testing) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files. The program will only read data from np_files folders.
@@ -154,13 +154,13 @@ Example: You have only 2 images, and you indicate --Kfold 2, which means you wil
 #### Example command: Train SegCaps R3 on MS COCO dataset without GPU support. Assume you have 4 or more images.
 
 ```bash
-python3 ./main.py --train=1 --test=0 --manip=0 --initial_lr 0.1 --net segcapsr3 --loss dice --data_root_dir=data --which_gpus=-2 --gpus=0 --dataset mscoco17 
+python3 ./main.py --train --initial_lr 0.1 --net segcapsr3 --loss dice --data_root_dir=data --which_gpus=-2 --gpus=0 --dataset mscoco17 
 ```
 
 #### Example command: Train basic Capsule Net on MS COCO dataset with GPU support. Number of GPU = 1. K = 1 = You only train your model on one image for overfitting test.
 
 ```bash
-python3 ./main.py --train=1 --test=0 --manip=0 --data_root_dir=data --net capsbasic --initial_lr 0.0001 --loglevel 2 --Kfold 1 --loss dice --dataset mscoco17 --recon_wei 20 --which_gpu -1 --gpus 1 --aug_data 0
+python3 ./main.py --train --data_root_dir=data --net capsbasic --initial_lr 0.0001 --loglevel 2 --Kfold 1 --loss dice --dataset mscoco17 --recon_wei 20 --which_gpu -1 --gpus 1 --aug_data 0
 ```
 
 #### 5-3 Test your model:
@@ -175,7 +175,7 @@ Example: You have only 2 images, and you indicate --Kfold 2, which means you wil
 #### Example command: Test SegCaps R3 on MS COCO dataset without GPU support. Your pre-trained weight file store on ./data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
 
 ```bash
-python3 ./main.py --train=0 --test=1 --manip=0 --Kfold 2 --net segcapsr3 --data_root_dir=data --loglevel 2 --which_gpus=-2 --gpus=0 --dataset mscoco17 --weights_path data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
+python3 ./main.py --test --Kfold 2 --net segcapsr3 --data_root_dir=data --loglevel 2 --which_gpus=-2 --gpus=0 --dataset mscoco17 --weights_path data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
 ```
 
 #### 5-4 List all parameters:
@@ -191,9 +191,8 @@ And the result will be:
 ```text
 usage: main.py [-h] --data_root_dir DATA_ROOT_DIR
                [--weights_path WEIGHTS_PATH] [--split_num SPLIT_NUM]
-               [--net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}]
-               [--train {0,1}] [--test {0,1}] [--manip {0,1}]
-               [--shuffle_data {0,1}] [--aug_data {0,1}]
+               [--net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}] [--train]
+               [--test] [--manip] [--shuffle_data {0,1}] [--aug_data {0,1}]
                [--loss {bce,w_bce,dice,mar,w_mar}] [--batch_size BATCH_SIZE]
                [--initial_lr INITIAL_LR] [--steps_per_epoch STEPS_PER_EPOCH]
                [--epochs EPOCHS] [--patience PATIENCE] [--recon_wei RECON_WEI]
@@ -220,9 +219,9 @@ optional arguments:
                         Which training split to train/test on.
   --net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}
                         Choose your network.
-  --train {0,1}         Set to 1 to enable training.
-  --test {0,1}          Set to 1 to enable testing.
-  --manip {0,1}         Set to 1 to enable manipulation.
+  --train               Add this flag to enable training.
+  --test                Add this flag to enable testing.
+  --manip               Add this flag to enable manipulation.
   --shuffle_data {0,1}  Whether or not to shuffle the training data (both per
                         epoch and in slice order.
   --aug_data {0,1}      Whether or not to use data augmentation during
