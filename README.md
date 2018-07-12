@@ -101,7 +101,7 @@ cd ..
 The repo include a crawler program to download your own class of images for training.
 But you have to download the annotation file first.
 
- Click [Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip) to download them.
+ Click [Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip) to download it.
 
 There are two JSON files contain in the zip file. Extract them into a folder.
 
