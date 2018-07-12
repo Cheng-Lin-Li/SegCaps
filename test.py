@@ -211,8 +211,8 @@ def test(args, test_list, model_list, net_input_shape):
                     # Translate the image from RGB (8bits X 3) to 24bits gray scale space by PILLOW package
                     gt_data = image2float_array(gt_data, 16777216-1)  #2^24=16777216
             
-                    # Reshape numpy from 2 to 3 dimensions (slices, x, y, channels)
-                    gt_data = gt_data.reshape([gt_data.shape[0], gt_data.shape[1], 1])
+                    # Reshape numpy from 2 to 3 dimensions (slices, x, y)
+                    gt_data = gt_data.reshape([1, gt_data.shape[0], gt_data.shape[1]])
                 else:
                     print('Only support RGB color matp to 24 bit Gray Scale process!!')
                     exit ()
