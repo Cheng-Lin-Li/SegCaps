@@ -100,10 +100,12 @@ cd ..
 #### 4-2. Test on Microsoftsoft Common Objects in COntext (MS COCO) dataset 2017.
 The repo include a crawler program to download your own class of images for training.
 But you have to download the annotation file first.
-[Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip)
-There are two JSON files contain in the zip file. Extract them into a folder. 
 
-In this example, these two annotation files were extracted into the folder under ~/SegCaps/annotations/
+ Click [Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip) to download them.
+
+There are two JSON files contain in the zip file. Extract them into a folder.
+
+In this example, these two annotation files were extracted into the folder ~/SegCaps/annotations/
 
 Example 1: Download 10 images and mask files with 'person' class from MS COCO validation dataset.
 
