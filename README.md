@@ -103,16 +103,16 @@ But you have to download the annotation file first.
 [Microsoft COCO 2017](http://images.cocodataset.org/annotations/annotations_trainval2017.zip)
 There are two JSON files contain in the zip file. Extract them into a folder. 
 
-In this example the folder is under ~/SegCaps/annotations/
+In this example, these two annotation files were extracted into the folder under ~/SegCaps/annotations/
 
-Example 1: Download 10 images and mask files with 'person' class from MS COCO dataset.
+Example 1: Download 10 images and mask files with 'person' class from MS COCO validation dataset.
 
 ```bash
 cd ./cococrawler
 $python3 getcoco17.py --data_root_dir ../data --category person --annotation_file ./annotations/instances_val2017.json --number 10
 ```
 
-Example 2: Download image IDs 22228, and 178040 with mask images for only person class.
+Example 2: Download image IDs 22228, and 178040 with mask images for only person class from MS COCO 2017 training dataset.
 ```bash
 cd ./cococrawler
 $python3 getcoco17.py --data_root_dir ../data/coco --category person --annotation_file ./annotations/instances_train2017.json  --number 10 --id 22228 178040
