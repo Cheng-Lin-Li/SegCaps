@@ -167,6 +167,8 @@ optional arguments:
 
 From the main file (`main.py`) you can train, test, and manipulate the segmentation capsules of various networks. Simply set the ```--train```, ```--test```, or ```--manip flags``` to turn these on respectively. The argument ```--data_root_dir``` is the only required argument and should be set to the directory containing your 'imgs' and 'masks' folders. There are many more arguments that can be set and these are all explained in the main.py file. 
 
+Please be aware of manipulate function only support 3D images. This version of source codes *DO NOT* support 2D images.
+
 
 The program will convert all image files into numpy format then store training/testing images into ./data/np_files and training (and testing) file lists under ./data/split_list folders. You need to remove these two folders every time if you want to replace your training image and mask files. The program will only read data from np_files folders.
 
@@ -392,7 +394,7 @@ optional arguments:
   1. main.py: The entry point of this project.
   2. train.py: The major training module.
   3. test.py: The major testing module.
-  4. manip.py: The manipulate module of the model.
+  4. manip.py: The manipulate module of the model. Only support 3D images. This version does NOT support 2D images.
   5. gen_mask.py: A video streaming capture program integrated with SegCaps for segmentation task
 
 ### 7. Program Structures:
@@ -516,7 +518,9 @@ cd ~/SegCaps/raspberrypi
   
   7. Integrate model with webcam. =>Completed
 
-  8. Reduce the model size to fit into Raspberry memory (1GB)
+  8. Modify the manipulate module to support 2D images.
+
+  9. Reduce the model size to fit into Raspberry memory (1GB)
 
 
 
