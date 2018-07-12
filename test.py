@@ -197,7 +197,7 @@ def test(args, test_list, model_list, net_input_shape):
             # Load gt mask
             # sitk_mask: 3d RTTI(512, 512, slices)
             sitk_mask = sitk.ReadImage(join(args.data_root_dir, 'masks', img[0]))
-            # gt_data: 3d=(slices, 512, 512)
+            # gt_data: 3d=(slices, 512, 512), Ground Truth data
             gt_data = sitk.GetArrayFromImage(sitk_mask)
             
             # Change RGB to single slice of grayscale image for MS COCO 17 dataset.
