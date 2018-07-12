@@ -28,7 +28,7 @@ from keras.utils.training_utils import multi_gpu_model
 from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping, ReduceLROnPlateau, TensorBoard
 import tensorflow as tf
 
-from utils.custom_losses import dice_hard, weighted_binary_crossentropy_loss, dice_loss, margin_loss
+from utils.custom_losses import dice_hard, weighted_binary_crossentropy_loss, dice_loss, margin_loss, bce_dice_loss
 from utils.load_data import load_class_weights
 from utils.data_helper import get_generator
 
@@ -46,6 +46,8 @@ def get_loss(root, split, net, recon_wei, choice):
         loss = margin_loss(margin=0.4, downweight=0.5, pos_weight=pos_class_weight)
     elif choice == 'mar':
         loss = margin_loss(margin=0.4, downweight=0.5, pos_weight=1.0)
+    elif choice == 'bce_dice':
+        loss = bce_dice_loss
     else:
         raise Exception("Unknow loss_type")
 
@@ -68,7 +70,7 @@ def get_callbacks(arguments):
                                        monitor=monitor_name, save_best_only=True, save_weights_only=False,
                                        verbose=1, mode='max')
     lr_reducer = ReduceLROnPlateau(monitor=monitor_name, factor=0.05, cooldown=0, patience=50,verbose=1, mode='max')
-    early_stopper = EarlyStopping(monitor=monitor_name, min_delta=0, patience=10, verbose=0, mode='max')
+    early_stopper = EarlyStopping(monitor=monitor_name, min_delta=0, patience=arguments.patience, verbose=0, mode='max')
 
     return [model_checkpoint, csv_logger, lr_reducer, early_stopper, tb]
 
@@ -173,12 +175,12 @@ def train(args, train_list, val_list, u_model, net_input_shape):
                                batchSize=args.batch_size, numSlices=args.slices, subSampAmt=args.subsamp,
                                stride=args.stride, shuff=args.shuffle_data, aug_data=args.aug_data),
         max_queue_size=8, workers=4, use_multiprocessing=args.use_multiprocessing,
-        steps_per_epoch=1000,
+        steps_per_epoch=args.steps_per_epoch,
         validation_data=generate_val_batches(args.data_root_dir, val_list, net_input_shape, net=args.net,
                                              batchSize=args.batch_size,  numSlices=args.slices, subSampAmt=0,
                                              stride=args.stride, shuff=args.shuffle_data),
         validation_steps=5, # Set validation stride larger to see more of the data.
-        epochs=20,
+        epochs=args.epochs,
         callbacks=callbacks,
         verbose=1)
     # Plot the training data collected
