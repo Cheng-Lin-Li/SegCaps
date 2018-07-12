@@ -16,17 +16,43 @@ Author's project page for this work can be found at https://rodneylalonde.wixsit
 
 ## Getting Started Guide
 
+[This is the presentation file for this project.](http://bit.ly/2N7aWti)
+
 This is my experiment to test SegCaps Net R3.
 I overfit on a single image, then tested how the modeled performed as the image orientation was changed. 
 <img src="imgs/overfit-test.png" width="900px"/>
 Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5'
 
+## Enhancements & Modifications
 
-The program was modified to support python 3.6 on Ubuntu 18.04 and Windows 10.
+1. The program was modified to support python 3.6 on Ubuntu 18.04 and Windows 10.
+2. Support not only 3D computed tomography scan images but also 2D Microsoft Common Objects in COntext (MS COCO) dataset images.
+3. Change the dice loss function type from Sørensen to Jaccard coefficient for comparing the similarity
+4. Add Kfold parameter for users to customize the cross validation task. K = 1 will force model to perform overfit.
+5. Add retrain parameter to enable users to reload pre-trained weights and retrain the model.
+6. Add initial learning rate for users to adjust.
+7. Add steps per epoch for users to adjust.
+8. Add number of patience for early stop of training to users.
+9. Add 'bce_dice' loss function as binary cross entropy + soft dice coefficient.
+10. Revise 'train', 'test', 'manip' flags from 0 or 1 to flags show up or not to indicate the behavior of main program.
+11. Add new webcam integration program for video stream segmentation.
 
-### 1. Install Required Packages on Ubuntu / Windows
+## Procedures 
+
+### 1. Download this repo to your own folder
+  1-1. Download this repository via [https://github.com/Cheng-Lin-Li/SegCaps/archive/master.zip](https://github.com/Cheng-Lin-Li/SegCaps/archive/master.zip)
+
+  1-2. Extract the zip file into a folder.
+
+  1-3. Change your current directory to project folder.
+
+  ```bash
+  cd ./SegCaps-master/SegCaps-master
+  ```
+
+### 2. Install Required Packages on Ubuntu / Windows
 This code is written for Keras using the TensorFlow backend. 
-You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
+The requirements.txt will install tensorflow CPU as default. You may need to adjust requirements.txt file according to your environment (CPU only or GPU for tensorflow installation). 
 
 Please install all required packages before using programs.
 
@@ -43,9 +69,6 @@ These steps will resolve it:
 sudo apt-get update
 sudo apt-get install libjasper-dev
 ```
-
-### 2. Download this repo to your own folder
-Example: repo folder name ~/SegCaps/
 
 ### 3. Make your data directory.
 Below commands:
@@ -106,7 +129,7 @@ Try below command to list all parameters for the crawler program.
 python3 getcoco17.py -h
 ```
 
-```bash
+```text
 usage: getcoco17.py [-h] [--data_root_dir DATA_ROOT_DIR]
                     [--category CATEGORY [CATEGORY ...]]
                     [--annotation_file ANNOTATION_FILE]
@@ -193,7 +216,7 @@ usage: main.py [-h] --data_root_dir DATA_ROOT_DIR
                [--weights_path WEIGHTS_PATH] [--split_num SPLIT_NUM]
                [--net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}] [--train]
                [--test] [--manip] [--shuffle_data {0,1}] [--aug_data {0,1}]
-               [--loss {bce,w_bce,dice,mar,w_mar}] [--batch_size BATCH_SIZE]
+               [--loss {bce,w_bce,dice,bce_dice,mar,w_mar}] [--batch_size BATCH_SIZE]
                [--initial_lr INITIAL_LR] [--steps_per_epoch STEPS_PER_EPOCH]
                [--epochs EPOCHS] [--patience PATIENCE] [--recon_wei RECON_WEI]
                [--slices SLICES] [--subsamp SUBSAMP] [--stride STRIDE]
@@ -226,10 +249,10 @@ optional arguments:
                         epoch and in slice order.
   --aug_data {0,1}      Whether or not to use data augmentation during
                         training.
-  --loss {bce,w_bce,dice,mar,w_mar}
+  --loss {bce,w_bce,dice,bce_dice,mar,w_mar}
                         Which loss to use. "bce" and "w_bce": unweighted and
-                        weighted binary cross entropy"dice": soft dice
-                        coefficient, "mar" and "w_mar": unweighted and
+                        weighted binary cross entropy, "dice": soft dice
+                        coefficient, "bce_dice": binary cross entropy + soft dice coefficient, "mar" and "w_mar": unweighted and
                         weighted margin loss.
   --batch_size BATCH_SIZE
                         Batch size for training/testing.
@@ -317,7 +340,7 @@ Try below command to list all parameters for the main program.
 python3 gen_mask.py -h
 ```
 
-```bash
+```text
 usage: gen_mask.py [-h] [--net {segcapsr3,segcapsr1,capsbasic,unet,tiramisu}]
                    --weights_path WEIGHTS_PATH [--num_class NUM_CLASS]
                    [--which_gpus WHICH_GPUS] [--gpus GPUS]
@@ -346,6 +369,22 @@ optional arguments:
                         else this argument must be included.
 ```
 
+#### 5-6 Pretrain weights for your testing:
+##### Weights stored under your data folder.
+   example: ./data/saved_models/segcapsr3
+  
+  1. Pretrained weights for general purpose on person with 40 images.
+
+  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.0001_recon-20.0_model_20180705-092846.hdf5
+
+  2. Pretrained weights for portrait of man. (Overfit test, not good at general purpose usage)
+
+  split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
+
+  3. Pretrained weights for 3 girls on the street (Overfit test, but still can test on general environments)
+
+  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180707-222802-0.52.hdf5
+
 
 ### 6. Program Descriptions
   1. main.py: The entry point of this project.
@@ -356,7 +395,7 @@ optional arguments:
 
 ### 7. Program Structures:
 ```text
-----SegCaps  (Project folder)
+----SegCaps-master  (Project folder)
     |
     \-cococrawler (Crawler program folder)
     |   \-annotations (Folder of Microsoft COCO annotation files)
@@ -370,6 +409,9 @@ optional arguments:
     |   \-figs (Conver image to numpy format, part of images stored for checking)
     |   \-saved_models (All model weights will be stored under this folder)
     |   \-results (Test result images will be stored in this folder)
+    |     |
+    |     \segcapr3\split_0\final_output
+    |                      \raw_output
     |
     \-models (Reference model files: Unet and DenseNet)
     |
@@ -422,7 +464,7 @@ cd ~/SegCaps/raspberrypi
 ```
 
 
-## 9. TODO List:
+## TODO List:
   1. Execute programs on LUNA 16 dataset. =>Completed
 
     1-1. Porting program from python 2.7 to 3.6 (Jun 11)
