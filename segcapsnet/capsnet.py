@@ -10,6 +10,7 @@ This file contains the network definitions for the various capsule network archi
 
 from keras import layers, models
 from keras import backend as K
+    
 K.set_image_data_format('channels_last')
 
 from segcapsnet.capsule_layers import ConvCapsuleLayer, DeconvCapsuleLayer, Mask, Length
