@@ -383,7 +383,7 @@ optional arguments:
 
   2. Pretrained weights for portrait of man. (Overfit test, not good at general purpose usage)
 
-  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180713-041900
+  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180713-041900.hdf5
 
   3. Pretrained weights for 3 girls on the street (Overfit test, but still can test on general environments)
 
