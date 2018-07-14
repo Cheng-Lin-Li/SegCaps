@@ -30,7 +30,7 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 from keras.utils import print_summary
 from utils.data_helper import get_generator
-from utils.custom_data_aug import process_image, image_resize2square, image2float_array
+from utils.custom_data_aug import convert_img_data, convert_mask_data
 
 RESOLUTION = 512
 GRAYSCALE = True
@@ -138,20 +138,7 @@ def test(args, test_list, model_list, net_input_shape):
             
             # Change RGB to single slice of grayscale image for MS COCO 17 dataset.
             if args.dataset == 'mscoco17':
-                if GRAYSCALE == True:
-                    img_data = img_data[:,:,:3]
-                            
-                    # Add 5 for each pixel and change resolution on the image.
-                    img_data = process_image(img_data, shift = 1, resolution = RESOLUTION)
-                                
-                    # Translate the image to 24bits grayscale by PILLOW package
-                    img_data = image2float_array(img_data, 16777216-1)  #2^24=16777216
-        
-                    # Reshape numpy from 2 to 3 dimensions img_data = (512, 512, 1)
-                    img_data = img_data.reshape([img_data.shape[0], img_data.shape[1], 1])
-                    
-                else: # RGB 3 channels treat as 3 slices.
-                    img_data = np.reshape(img_data, (1, img_data.shape[0], img_data.shape[1], 4))
+                img_data = convert_img_data(img_data, 3)
 
             num_slices = 1               
             logging.info('\ntest.test: eval_model.predict_generator')
@@ -202,20 +189,9 @@ def test(args, test_list, model_list, net_input_shape):
             
             # Change RGB to single slice of grayscale image for MS COCO 17 dataset.
             if args.dataset == 'mscoco17':
-                if GRAYSCALE == True:
-                    gt_data = gt_data[:,:,:3]
-                            
-                    # Add 5 for each pixel and change resolution on the image.
-                    gt_data = process_image(gt_data, shift = 1, resolution = RESOLUTION)
-                                
-                    # Translate the image from RGB (8bits X 3) to 24bits gray scale space by PILLOW package
-                    gt_data = image2float_array(gt_data, 16777216-1)  #2^24=16777216
-            
-                    # Reshape numpy from 2 to 3 dimensions (slices, x, y)
-                    gt_data = gt_data.reshape([1, gt_data.shape[0], gt_data.shape[1]])
-                else:
-                    print('Only support RGB color matp to 24 bit Gray Scale process!!')
-                    exit ()
+                gt_data = convert_mask_data(gt_data)
+                # Reshape numpy from 2 to 3 dimensions (slices, heigh, width)
+                gt_data = gt_data.reshape([1, gt_data.shape[0], gt_data.shape[1]])
 
             # Plot Qual Figure
             print('Creating Qualitative Figure for Quick Reference')
