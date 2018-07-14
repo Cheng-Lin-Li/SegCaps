@@ -21,7 +21,7 @@ Author's project page for this work can be found at https://rodneylalonde.wixsit
 This is my experiment to test SegCaps Net R3.
 I overfit on a single image, then tested how the modeled performed as the image orientation was changed. 
 <img src="imgs/overfit-test.png" width="900px"/>
-Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5'
+Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180713-041900'
 
 ## Enhancements & Modifications
 
@@ -383,11 +383,11 @@ optional arguments:
 
   2. Pretrained weights for portrait of man. (Overfit test, not good at general purpose usage)
 
-  split-0_batch-1_shuff-1_aug-1_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-2.0_model_20180702-055808.hdf5
+  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180713-041900
 
   3. Pretrained weights for 3 girls on the street (Overfit test, but still can test on general environments)
 
-  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180707-222802-0.52.hdf5
+  split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180707-222802.hdf5
 
 
 ### 6. Program Descriptions
