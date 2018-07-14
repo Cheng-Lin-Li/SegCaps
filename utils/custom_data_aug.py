@@ -14,6 +14,9 @@ from scipy.ndimage.interpolation import map_coordinates
 
 from keras.preprocessing.image import random_rotation, random_shift, random_zoom, random_shear
 
+GRAYSCALE = True
+RESOLUTION = 512
+COCO_BACKGROUND = (68, 1, 84, 255)
 MASK_BACKGROUND = (0,0,0,0)    
 DEFAULT_RGB_SCALE_FACTOR = 256000.0
 DEFAULT_GRAY_SCALE_FACTOR = {np.uint8: 100.0,
@@ -184,8 +187,76 @@ def process_image(img, shift, resolution):
     img = image_resize2square(img, resolution)    
     
     return img
-    
 
+
+def change_background_color(img, original_color, new_color):
+    '''
+    Convert mask color of 4 channels png image to new color 
+    '''
+    
+    r1, g1, b1, a1 = original_color[0], original_color[1], original_color[2], original_color[3]  # Original value
+    # mask background color (0,0,0,0)
+    r2, g2, b2, a2 = new_color[0], new_color[1], new_color[2], new_color[3] # Value that we want to replace it with
+
+    red, green, blue, alpha = img[:,:,0], img[:,:,1], img[:,:,2], img[:,:,3]
+    mask = (red == r1) & (green == g1) & (blue == b1) & (alpha == a1)
+    img[:,:,:4][mask] = [r2, g2, b2, a2]
+    return img
+    
+def convert_mask_data(mask, resolution = RESOLUTION, from_background_color = COCO_BACKGROUND,
+                       to_background_color = MASK_BACKGROUND):
+    '''
+    1. Resize mask to square with size of resolution.
+    2. Change back ground color to black
+    3. Change pixel value to 1 for masking
+    4. Change pixel value to 0 for non-masking area
+    5. Reduce data type to uint8 to reduce the file size of mask.
+    '''
+    mask = image_resize2square(mask, resolution)
+     
+    mask = change_background_color(mask, from_background_color, to_background_color) 
+    if GRAYSCALE == True:      
+        # Only need one channel for black and white      
+        mask = mask[:,:,:1]
+    else:
+        mask = mask[:,:,:1] # keep 3 channels for RGB. Remove alpha channel.
+
+    mask[mask >= 1] = 1 # The mask. ie. class of Person
+    mask[mask != 1] = 0 # Non Person / Background
+    mask = mask.astype(np.uint8)
+    return mask
+    
+def convert_img_data(img, dims = 4, resolution = RESOLUTION):
+    '''
+    Convert image data by 
+    1. Shift RGB channel with value 1 to avoid pure black color.
+    2. Resize image to square
+    3. Normalized data
+    4. reshape to require dimension 3 or 4 
+    '''
+    img = img[:,:,:3]
+    if GRAYSCALE == True:
+        # Add 1 for each pixel and change resolution on the image.
+        img = process_image(img, shift = 1, resolution = resolution)
+                    
+        # Translate the image to 24bits grayscale by PILLOW package
+        img = image2float_array(img, 16777216-1)  #2^24=16777216
+        if dims == 3:
+            # Reshape numpy from 2 to 3 dimensions
+            img = img.reshape([img.shape[0], img.shape[1], 1])
+        else: # dimension = 4
+            img = img.reshape([1, img.shape[0], img.shape[1], 1])
+    else: # Color image with 3 channels
+        # Add 1 for each pixel and change resolution on the image.
+        img = process_image(img, shift = 1, resolution = resolution)
+        if dims == 3:
+            # Keep RGB channel, remove alpha channel
+            img = img[:,:,:3]
+        else: # dimensions = 4
+            img = img[:,:,:,:3]
+    return img
+    
+    
 def augmentImages(batch_of_images, batch_of_masks):
     for i in range(len(batch_of_images)):
         img_and_mask = np.concatenate((batch_of_images[i, ...], batch_of_masks[i,...]), axis=2)

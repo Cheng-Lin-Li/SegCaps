@@ -32,30 +32,11 @@ import matplotlib.pyplot as plt
 
 plt.ioff()
 
-from utils.custom_data_aug import augmentImages, process_image, image_resize2square, image2float_array
+from utils.custom_data_aug import augmentImages, convert_img_data, convert_mask_data
 from utils.threadsafe import threadsafe_generator
 
-debug = 0
-RESOLUTION = 512
-COCO_BACKGROUND = (68, 1, 84, 255)
-MASK_BACKGROUND = (0,0,0,0)      
-GRAYSCALE = True
-
-def change_background_color(img, original_color, new_color):
-    '''
-    Convert mask color of 4 channels png image to new color 
-    '''
+debug = 0    
     
-    r1, g1, b1, a1 = original_color[0], original_color[1], original_color[2], original_color[3]  # Original value
-    # mask background color (0,0,0,0)
-    r2, g2, b2, a2 = new_color[0], new_color[1], new_color[2], new_color[3] # Value that we want to replace it with
-
-    red, green, blue, alpha = img[:,:,0], img[:,:,1], img[:,:,2], img[:,:,3]
-    mask = (red == r1) & (green == g1) & (blue == b1) & (alpha == a1)
-    img[:,:,:4][mask] = [r2, g2, b2, a2]
-    return img
-
-  
 def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
     fname = img_name[:-4]
     numpy_path = join(root_path, 'np_files')
@@ -80,41 +61,14 @@ def convert_data_to_numpy(root_path, img_name, no_masks=False, overwrite=False):
 
     try:       
         img = np.array(Image.open(join(img_path, img_name)))
-        img = img[:,:,:3]
-
-        if GRAYSCALE == True:
-            # Add 5 for each pixel and change resolution on the image.
-            img = process_image(img, shift = 1, resolution = RESOLUTION)
-                        
-            # Translate the image to 24bits grayscale by PILLOW package
-            img = image2float_array(img, 16777216-1)  #2^24=16777216
-
-            # Reshape numpy from 2 to 3 dimensions
-            img = img.reshape([img.shape[0], img.shape[1], 1])
-        else: # Color image with 3 channels
-            # Add 5 for each pixel and change resolution on the image.
-            img = process_image(img, shift = 1, resolution = RESOLUTION)
-            # Keep RGB channel, remove alpha channel
-            img = img[:,:,:3]            
+        # Conver image to 3 dimensions
+        img = convert_img_data(img, 3)
             
         if not no_masks:
             # Replace SimpleITK to PILLOW for 2D image support on Raspberry Pi
             mask = np.array(Image.open(join(mask_path, img_name))) # (x,y,4)
             
-            mask = image_resize2square(mask, RESOLUTION)
-             
-            mask = change_background_color(mask, COCO_BACKGROUND, MASK_BACKGROUND) 
-            if GRAYSCALE == True:      
-                # Only need one channel for black and white      
-                mask = mask[:,:,:1]
-            else:
-                mask = mask[:,:,:1] # keep 3 channels for RGB. Remove alpha channel.
-
-
-
-            mask[mask >= 1] = 1 # The mask. ie. class of Person
-            mask[mask != 1] = 0 # Non Person / Background
-            mask = mask.astype(np.uint8)
+            mask = convert_mask_data(mask)
 
         if not no_masks:
             np.savez_compressed(join(numpy_path, fname + '.npz'), img=img, mask=mask)
@@ -338,30 +292,13 @@ def generate_test_batches(root_path, test_list, net_input_shape, batchSize=1, nu
 def generate_test_image(test_img, net_input_shape, batchSize=1, numSlices=1, subSampAmt=0,
                           stride=1, downSampAmt=1):
     '''
-    test_img: numpy.array of image data
+    test_img: numpy.array of image data, (height, width, channels)
     
     '''
     # Create placeholders for testing
     logging.info('\nload_2D_data.generate_test_image')
-
-    #######
-    if GRAYSCALE == True:
-        test_img = test_img[:,:,:3]
-                
-        # Add 5 for each pixel and change resolution on the image.
-        test_img = process_image(test_img, shift = 1, resolution = RESOLUTION)
-                    
-        # Translate the image from RGB (8bits X 3) to 24bits gray scale space by PILLOW package
-        test_img = image2float_array(test_img, 16777216-1)  #2^24=16777216
-
-        # Reshape numpy from 2 to 4 dimensions (slices, x, y, channels)
-        test_img = test_img.reshape([1, test_img.shape[0], test_img.shape[1], 1])
-    else: # Color image with 3 channels
-        # Add 5 for each pixel and change resolution on the image.
-        test_img = process_image(test_img, shift = 1, resolution = RESOLUTION)
-        # Keep RGB channel, remove alpha channel
-        test_img = np.reshape(test_img, (1, test_img.shape[0], test_img.shape[1], 4))
-        test_img = test_img[:,:,:,:3]
+    # Convert image to 4 dimensions
+    test_img = convert_img_data(test_img, 4)
         
     yield (test_img)
        
