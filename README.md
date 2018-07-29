@@ -522,6 +522,8 @@ cd ~/SegCaps/raspberrypi
 
   9. Reduce the model size to fit into Raspberry memory (1GB)
 
+  10. Support multiclass segmentation.
+
 
 
 ### Citation
