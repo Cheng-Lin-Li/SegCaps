@@ -21,7 +21,7 @@ Author's project page for this work can be found at https://rodneylalonde.wixsit
 This is my experiment to test SegCaps Net R3.
 I overfit on a single image, then tested how the modeled performed as the image orientation was changed. 
 <img src="imgs/overfit-test.png" width="900px"/>
-Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-dice_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180713-041900'
+Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuff-1_aug-0_loss-mar_slic-1_sub--1_strid-1_lr-0.01_recon-20.0_model_20180723-235354.hdf5'
 
 ## Enhancements & Modifications
 
