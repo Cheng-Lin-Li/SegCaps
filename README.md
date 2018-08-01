@@ -5,7 +5,7 @@
 ### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/)
 ### Objectives: Build up an End-to-End pipeline for Object Segmentation experiments on SegCaps with not only 3D CT images (LUNA 16) but also 2D color images (MS COCO 2017).
 
-## This repository downloaded from the implementation of SegCaps from official site with program restructure and enhancements.
+## This repository downloaded from the official website of SegCaps implementation with program restructure and enhancements.
 
 The original paper for SegCaps can be found at https://arxiv.org/abs/1804.04241.
 
