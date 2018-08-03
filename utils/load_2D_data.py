@@ -1,18 +1,31 @@
 '''
-Capsules for Object Segmentation (SegCaps)
-Original Paper by Rodney LaLonde and Ulas Bagci (https://arxiv.org/abs/1804.04241)
-Code written by: Rodney LaLonde
-If you use significant portions of this code or the ideas from our paper, please cite it :)
-If you have any questions, please email me at lalonde@knights.ucf.edu.
+This program includes all functions of 2D color image processing for UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
 
-This file is used for loading training, validation, and testing data into the models.
-It is specifically designed to handle 3D single-channel medical data.
-Modifications will be needed to train/test on normal 3-channel images.
+@author: Cheng-Lin Li a.k.a. Clark
 
-Enhancement:
-    0. Porting to Python version 3.6
-    1. Add image_resize2square to accept any size of images and change to 512 X 512 resolutions.
-    2. 
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com
+
+Tasks:
+    The program based on parameters from main.py to load 2D color image files from folders.
+
+    The program will convert all image files into numpy format then store training/testing images into 
+    ./data/np_files and training (and testing) file lists under ./data/split_list folders. 
+    You need to remove these two folders every time if you want to replace your training image and mask files. 
+    The program will only read data from np_files folders.
+    
+Data:
+    MS COCO 2017 or LUNA 2016 were tested on this package.
+    You can leverage your own data set but the mask images should follow the format of MS COCO or with background color = 0 on each channel.
+    
+
+Features: 
+    1. Integrated with MS COCO 2017 dataset.
+    2. Use PILLOW library instead of SimpleITK for better support on RasberryPi
+    3. add new generate_test_image function to process single image frame for video stream
 '''
 
 from __future__ import print_function

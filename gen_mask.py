@@ -11,10 +11,6 @@ Tasks: Input an image file and output a mask image file.
 @license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
 
 @contact:    clark.cl.li@gmail.com
-@version:    1.2
-
-@create:    June 27, 2018
-@updated:   July 06, 2018 
 
 Tasks:
 The program implementation will classify input image by a trained model and generate mask image as 

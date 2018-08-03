@@ -6,6 +6,27 @@ If you use significant portions of this code or the ideas from our paper, please
 If you have any questions, please email me at lalonde@knights.ucf.edu.
 
 This file contains the custom data augmentation functions.
+
+=====
+
+This program includes all data augmentation functions UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
+
+@author: Cheng-Lin Li a.k.a. Clark
+
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com     
+    
+Enhancement:
+    1. add image2float_array
+    2. add image_resize2square: Convert any size of image file to 512 X 512 resolutions
+    3. add image_enhance function to sifht image color space includes background color
+    4. add process_image to wrap image color shifting and resize the resolutions
+    5. add change_background_color to change mask background color of MS COCO files to black
+    6. add convert_mask_data function to resize and change mask color to black
+    7. add convert_img_data function to wrap process_image, normalized data, reshape to require dimension 3 or 4 
 '''
 
 import numpy as np

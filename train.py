@@ -7,7 +7,29 @@ If you have any questions, please email me at lalonde@knights.ucf.edu.
 
 This file is used for training models. Please see the README for details about training.
 
-Enhancement: Integrated with MS COCO dataset.
+==============
+This is the entry point of the train procedure for UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
+
+@author: Cheng-Lin Li a.k.a. Clark
+
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com
+
+Tasks:
+    The program based on parameters from main.py to perform training tasks on all models.
+
+
+Data:
+    MS COCO 2017 or LUNA 2016 were tested on this package.
+    You can leverage your own data set but the mask images should follow the format of MS COCO or with background color = 0 on each channel.
+    
+
+Enhancement: 
+    1. Integrated with MS COCO 2017 dataset.
+    
 '''
 
 from __future__ import print_function

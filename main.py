@@ -7,6 +7,37 @@ If you have any questions, please email me at lalonde@knights.ucf.edu.
 
 This is the main file for the project. From here you can train, test, and manipulate the SegCaps of models.
 Please see the README for detailed instructions for this project.
+
+==============
+This is the entry point of the package to train UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
+
+@author: Cheng-Lin Li a.k.a. Clark
+
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com
+
+Tasks:
+    The program load parameters for training, testing, manipulation for all models.
+
+
+Data:
+    MS COCO 2017 or LUNA 2016 were tested on this package.
+    You can leverage your own data set but the mask images should follow the format of MS COCO or with background color = 0 on each channel.
+
+Enhancement: 
+  1. The program was modified to support python 3.6 on Ubuntu 18.04 and Windows 10.
+  2. Support not only 3D computed tomography scan images but also 2D Microsoft Common Objects in COntext (MS COCO) dataset images.
+  3. Add Kfold parameter for users to customize the cross validation task. K = 1 will force model to perform overfit.
+  4. Add retrain parameter to enable users to reload pre-trained weights and retrain the model.
+  5. Add initial learning rate for users to adjust.
+  6. Add steps per epoch for users to adjust.
+  7. Add number of patience for early stop of training to users.
+  8. Add 'bce_dice' loss function as binary cross entropy + soft dice coefficient.
+  9. Revise 'train', 'test', 'manip' flags from 0 or 1 to flags show up or not to indicate the behavior of main program.
+    
 '''
 
 from __future__ import print_function

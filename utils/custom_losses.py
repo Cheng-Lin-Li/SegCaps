@@ -7,6 +7,22 @@ If you use significant portions of this code or the ideas from our paper, please
 If you have any questions, please email me at lalonde@knights.ucf.edu.
 
 This file contains the definitions of custom loss functions not present in the default Keras.
+
+=====
+
+This program includes all custom loss functions UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
+
+@author: Cheng-Lin Li a.k.a. Clark
+
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com     
+    
+Enhancement:
+    1. Revise default loss_type to jaccard on dice_soft function. 
+    2. add bce_dice_loss for future usage.
 '''
 
 import tensorflow as tf

@@ -1,7 +1,18 @@
 '''
+This program is a helper to separate the codes of 2D and 3D image processing.
 
+@author: Cheng-Lin Li a.k.a. Clark
 
-This is a helper file for choosing which dataset functions to create.
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com
+
+Tasks:
+    The program is a helper to separate the codes of 2D and 3D image processing.
+
+    This is a helper file for choosing which dataset functions to create.
 '''
 import logging
 import utils.load_3D_data as ld3D

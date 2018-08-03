@@ -9,10 +9,33 @@ This file is used for loading training, validation, and testing data into the mo
 It is specifically designed to handle 3D single-channel medical data.
 Modifications will be needed to train/test on normal 3-channel images.
 
+=====
+This program includes all functions of 3D image processing for UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
+
+@author: Cheng-Lin Li a.k.a. Clark
+
+@copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
+
+@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+
+@contact:    clark.cl.li@gmail.com
+
+Tasks:
+    The program based on parameters from main.py to load 3D image files from folders.
+
+    The program will convert all image files into numpy format then store training/testing images into 
+    ./data/np_files and training (and testing) file lists under ./data/split_list folders. 
+    You need to remove these two folders every time if you want to replace your training image and mask files. 
+    The program will only read data from np_files folders.
+    
+Data:
+    MS COCO 2017 or LUNA 2016 were tested on this package.
+    You can leverage your own data set but the mask images should follow the format of MS COCO or with background color = 0 on each channel.
+      
+    
 Enhancement:
-    0. Porting to Python version 3.6
-    1. Add image_resize2square to accept any size of images and change to 512 X 512 resolutions.
-    2. 
+    1. Porting to Python version 3.6
+    2. Remove program code cleaning
 '''
 
 from __future__ import print_function
@@ -20,23 +43,15 @@ from __future__ import print_function
 import logging
 from os.path import join, basename
 from os import makedirs
-# from glob import glob
-# import csv
-# from sklearn.model_selection import KFold
+
 import numpy as np
 from numpy.random import rand, shuffle
 import SimpleITK as sitk
-# from sklearn.model_selection import train_test_split
-# from tqdm import tqdm #Progress bar
 
-# import matplotlib
-# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# import cv2
 
 plt.ioff()
 
-# from keras.preprocessing.image import *
 from utils.custom_data_aug import augmentImages
 from utils.threadsafe import threadsafe_generator
 

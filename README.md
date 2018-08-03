@@ -36,7 +36,7 @@ Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuf
 9. Add 'bce_dice' loss function as binary cross entropy + soft dice coefficient.
 10. Revise 'train', 'test', 'manip' flags from 0 or 1 to flags show up or not to indicate the behavior of main program.
 11. Add new webcam integration program for video stream segmentation.
-
+12. Accept any size of images and program automatically convert to 512 X 512 resolutions.
 ## Procedures 
 
 ### 1. Download this repo to your own folder
