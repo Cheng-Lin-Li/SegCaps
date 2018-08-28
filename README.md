@@ -37,7 +37,9 @@ Pre-trained weights include in 'data/saved_models/segcapsr3/split-0_batch-1_shuf
 10. Revise 'train', 'test', 'manip' flags from 0 or 1 to flags show up or not to indicate the behavior of main program.
 11. Add new webcam integration program for video stream segmentation.
 12. Accept any size of images and program automatically convert to 512 X 512 resolutions.
-## Procedures 
+
+
+## Procedures
 
 ### 1. Download this repo to your own folder
   1-1. Download this repository via [https://github.com/Cheng-Lin-Li/SegCaps/archive/master.zip](https://github.com/Cheng-Lin-Li/SegCaps/archive/master.zip)
@@ -164,7 +166,7 @@ optional arguments:
 #### 4-3. Test on your own dataset.
 The program only tested on LUNA 16 and MS COCO2017 dataset. But it can support for your own dataset too.
 
-4-3-1. For 2D images
+##### 4-3-1. For 2D images
 
   Dimension of images: (Width, Height, Channels)
 
@@ -172,7 +174,7 @@ The program only tested on LUNA 16 and MS COCO2017 dataset. But it can support f
   
   - Program parameters: --dataset mscoco17
 
-4-3-2. For 3D images
+##### 4-3-2. For 3D images
 
   Dimension of images: (Width, Height, Slices)
 
@@ -180,7 +182,7 @@ The program only tested on LUNA 16 and MS COCO2017 dataset. But it can support f
 
   - Program parameters: --dataset luna16 --slices 1
 
-4-4-4. Mask files
+##### 4-3-4. Mask files
 
   Due to the program only support binary image segmentation.
 
