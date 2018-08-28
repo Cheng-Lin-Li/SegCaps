@@ -3,7 +3,7 @@
 ### by [Rodney LaLonde](https://rodneylalonde.wixsite.com/personal) and [Ulas Bagci](http://www.cs.ucf.edu/~bagci/)
 
 ### Modified by [Cheng-Lin Li](https://cheng-lin-li.github.io/about/)
-### Objectives: Build up an End-to-End pipeline for Object Segmentation experiments on SegCaps with not only 3D CT images (LUNA 16) but also 2D color images (MS COCO 2017).
+### Objectives: Build up an End-to-End pipeline for Object Segmentation experiments on SegCaps with not only 3D CT images (LUNA 16) but also 2D color images (MS COCO 2017) on Binary Image Segmentation tasks.
 
 ## This repository downloaded from the official website of SegCaps implementation with program restructure and enhancements.
 
@@ -160,6 +160,33 @@ optional arguments:
                         ids. Masking will base on category.
   --number NUMBER       The total number of images you want to download.
 ```
+
+#### 4-3. Test on your own dataset.
+The program only tested on LUNA 16 and MS COCO2017 dataset. But it can support for your own dataset too.
+
+4-3-1. For 2D images
+
+  Dimension of images: (Width, Height, Channels)
+
+  - Channels = 1 or 3
+  
+  - Program parameters: --dataset mscoco17
+
+4-3-2. For 3D images
+
+  Dimension of images: (Width, Height, Slices)
+
+  - Slices = 1 (default) or integer (Number of slices to include for training/testing.)
+
+  - Program parameters: --dataset luna16 --slices 1
+
+4-4-4. Mask files
+
+  Due to the program only support binary image segmentation.
+
+  The mask should be either 0(background, Black) or 1(Foreground, White) for each pixel.
+
+  Dimension of images: (Width, Height, 1)
 
 
 ### 5. Train your model

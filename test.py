@@ -8,59 +8,63 @@ If you have any questions, please email me at lalonde@knights.ucf.edu.
 This file is used for testing models. Please see the README for details about testing.
 
 ==============
-This is the entry point of the test procedure for UNet, tiramisu, Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
+This is the entry point of the test procedure for UNet, tiramisu, 
+    Capsule Nets (capsbasic) or SegCaps(segcapsr1 or segcapsr3).
 
 @author: Cheng-Lin Li a.k.a. Clark
 
 @copyright:  2018 Cheng-Lin Li@Insight AI. All rights reserved.
 
-@license:    Licensed under the Apache License v2.0. http://www.apache.org/licenses/
+@license:    Licensed under the Apache License v2.0. 
+            http://www.apache.org/licenses/
 
 @contact:    clark.cl.li@gmail.com
 
 Tasks:
-    The program based on parameters from main.py to perform testing tasks on all models.
+    The program based on parameters from main.py to perform testing tasks 
+    on all models.
 
 
 Data:
     MS COCO 2017 or LUNA 2016 were tested on this package.
-    You can leverage your own data set but the mask images should follow the format of MS COCO or with background color = 0 on each channel.
-    
+    You can leverage your own data set but the mask images should follow the format of
+    MS COCO or with background color = 0 on each channel.
 
-Enhancement: 
+
+Enhancement:
     1. Integrated with MS COCO 2017 dataset.
-    
+
 
 '''
 
 from __future__ import print_function
-
 import logging
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-plt.ioff()
-
 from os.path import join
 from os import makedirs
 import csv
 import SimpleITK as sitk
-# from tqdm import tqdm
 import numpy as np
 import scipy.ndimage.morphology
 from skimage import measure, filters
 from utils.metrics import dc, jc, assd
 from PIL import Image
 from keras import backend as K
-K.set_image_data_format('channels_last')
 from keras.utils import print_summary
 from utils.data_helper import get_generator
 from utils.custom_data_aug import convert_img_data, convert_mask_data
 
+matplotlib.use('Agg')
+plt.ioff()
+K.set_image_data_format('channels_last')
+
 RESOLUTION = 512
 GRAYSCALE = True
 
-def threshold_mask(raw_output, threshold): #raw_output 3d:(119, 512, 512)
+
+def threshold_mask(raw_output, threshold):
+    #  raw_output 3d:(119, 512, 512)
     if threshold == 0:
         try:
             threshold = filters.threshold_otsu(raw_output)
@@ -72,20 +76,23 @@ def threshold_mask(raw_output, threshold): #raw_output 3d:(119, 512, 512)
     raw_output[raw_output > threshold] = 1
     raw_output[raw_output < 1] = 0
 
-    #all_labels 3d:(119, 512, 512)
+    # all_labels 3d:(119, 512, 512)
     all_labels = measure.label(raw_output)
-    # props 3d: region of props=>list(_RegionProperties:<skimage.measure._regionprops._RegionProperties object>) 
-    # with bbox. 
-    props = measure.regionprops(all_labels) 
+    # props 3d: region of props=>
+    #   list(_RegionProperties:<skimage.measure._regionprops._RegionProperties object>) 
+    # with bbox.
+    props = measure.regionprops(all_labels)
     props.sort(key=lambda x: x.area, reverse=True)
     thresholded_mask = np.zeros(raw_output.shape)
 
     if len(props) >= 2:
         # if the largest is way larger than the second largest
-        if props[0].area / props[1].area > 5:  
-            thresholded_mask[all_labels == props[0].label] = 1  # only turn on the largest component
+        if props[0].area / props[1].area > 5:
+            # only turn on the largest component
+            thresholded_mask[all_labels == props[0].label] = 1
         else:
-            thresholded_mask[all_labels == props[0].label] = 1  # turn on two largest components
+            # turn on two largest components
+            thresholded_mask[all_labels == props[0].label] = 1
             thresholded_mask[all_labels == props[1].label] = 1
     elif len(props):
         thresholded_mask[all_labels == props[0].label] = 1
